@@ -1,0 +1,69 @@
+name: Architecture decision
+description: Propose a Maintainer-owned architecture or trust-boundary decision.
+title: "[ADR]: "
+labels:
+  - type:research
+  - area:architecture
+  - status:needs-decision
+  - risk:trust-boundary
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form proposes a decision. Only the Maintainer may accept or reject it.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Describe the forcing problem, constraints, and existing evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_decision
+    attributes:
+      label: Proposed decision
+      description: State one precise decision and its ownership boundary.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Compare viable alternatives and explain why each was not selected.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_impact
+    attributes:
+      label: Evidence, Capability, and STOP impact
+      description: Explain effects on raw evidence, display models, Capability integrity, and mandatory STOP behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: security_impact
+    attributes:
+      label: Security and trust-boundary impact
+      description: Identify new trust, address confirmation, signing, RPC, or protocol assumptions.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences
+      description: List positive, negative, operational, and migration consequences.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: State how implementation and boundary compliance will be proven.
+    validations:
+      required: true
+  - type: input
+    id: related_work
+    attributes:
+      label: Related Issues or pull requests
+      description: Link related work. Use None when no related item exists.
+    validations:
+      required: true
