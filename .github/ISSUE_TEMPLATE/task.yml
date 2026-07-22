@@ -1,0 +1,76 @@
+name: Task
+description: Propose scoped project work with explicit acceptance evidence.
+title: "[Task]: "
+labels:
+  - type:chore
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every change starts with an approved Issue. Do not include secrets or unverified addresses.
+  - type: input
+    id: objective
+    attributes:
+      label: Objective
+      description: State the concrete outcome this task must produce.
+      placeholder: One verifiable outcome
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: Background
+      description: Explain the user or repository problem and why it matters now.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List the work included in this Issue.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: List adjacent work that this Issue must not include.
+    validations:
+      required: true
+  - type: dropdown
+    id: decision_impact
+    attributes:
+      label: Maintainer decision impact
+      description: Select the highest relevant architecture or security impact.
+      options:
+        - None
+        - Architecture
+        - Security or trust boundary
+        - Schema or STOP condition
+        - Multiple decision areas
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use a checklist of observable completion conditions.
+      placeholder: "- [ ] Condition"
+    validations:
+      required: true
+  - type: textarea
+    id: manual_checks
+    attributes:
+      label: Manual verification
+      description: Describe how a reviewer can verify the result without assumptions.
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundary_confirmation
+    attributes:
+      label: Boundary confirmation
+      options:
+        - label: I have not included secrets, private keys, or sensitive account data.
+          required: true
+        - label: Any protocol, token, or spender address requires Maintainer confirmation before use.
+          required: true

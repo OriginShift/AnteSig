@@ -1,0 +1,64 @@
+name: Bug report
+description: Report reproducible behavior that conflicts with an expected result.
+title: "[Bug]: "
+labels:
+  - type:bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not post private keys, sensitive account data, or exploitable details in a public Issue.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: Describe exactly what happened, including any bounded decision shown.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe the expected result and the document or requirement that supports it.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest reproducible sequence without secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and environment
+      description: Identify versions, network context, logs, or screenshots and mark every mock or fixture.
+    validations:
+      required: true
+  - type: dropdown
+    id: security_impact
+    attributes:
+      label: Security or trust-boundary impact
+      options:
+        - None known
+        - Possible evidence integrity impact
+        - Possible STOP condition impact
+        - Possible secret or signing impact
+        - Unsure; Maintainer review required
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround or current STOP behavior
+      description: State whether the system stops and any temporary workaround. Do not weaken a STOP condition.
+  - type: checkboxes
+    id: disclosure_confirmation
+    attributes:
+      label: Disclosure confirmation
+      options:
+        - label: This public report contains no secrets, private keys, or sensitive account data.
+          required: true
+        - label: Fixtures and mocks are explicitly identified and are not described as real evidence.
+          required: true
