@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "strict": true
+  },
+  "files": ["package.json"]
+}

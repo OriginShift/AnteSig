@@ -1,0 +1,31 @@
+name: quality-gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    name: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.23.1
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack install --global pnpm@11.16.0
+          pnpm --version
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Quality gate
+        run: pnpm check
