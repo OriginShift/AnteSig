@@ -11,13 +11,22 @@ the name of this repository or the application itself.
 
 ## Current status
 
-This repository is at **M0 - Repository & Architecture Baseline**. M0 contains
-documentation, governance, and GitHub workflow configuration only. There is no
-runnable demo, frontend, backend, Moss SDK integration, Monad RPC integration,
-quote implementation, simulation, fixture, or business schema yet.
+This repository contains the **M0 - Repository & Architecture Baseline** and
+the completed **M1-01 engineering foundation**. M1-01 provides a root-only
+pnpm workspace, Node 22 and pnpm 11 project constraints, strict no-emit
+TypeScript validation, Biome formatting and linting, Vitest test-runner
+infrastructure, and the `quality-gate` GitHub Actions workflow.
 
-Do not interpret repository setup or documentation as evidence that the target
-system works.
+This is tooling and CI infrastructure only. There is no runnable demo,
+frontend, backend, Schema, Fixture, Decision Engine, or business TypeScript
+implementation. The repository has no Moss or Monad integration, protocol,
+wallet, signing, transaction, or chain integration; it also contains no real
+address, private key, API key, receipt, quote, simulation, or other real-chain
+evidence.
+
+Do not interpret repository setup, local tooling, CI, or documentation as
+evidence that the target system works, as real-chain evidence, or as a safety
+guarantee.
 
 ## Safety position
 
