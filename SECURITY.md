@@ -2,9 +2,10 @@
 
 ## Current scope
 
-Moss-Mini Demo is currently at M0 and is not a runnable application. The
-repository contains no wallet, signing, mainnet submission, Moss integration,
-Monad RPC integration, or transaction simulation implementation.
+Moss-Mini Demo is not a runnable application. This checkout includes the
+M1-01 tooling and CI foundation, which does not add any wallet, signing,
+mainnet submission, Moss integration, Monad RPC integration, or transaction
+simulation implementation.
 
 The documented security boundary is normative for future work. See
 [docs/security-boundary.md](docs/security-boundary.md).

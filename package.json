@@ -1,0 +1,25 @@
+{
+  "name": "moss-mini-demo",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.16.0",
+  "engines": {
+    "node": ">=22.13 <23",
+    "pnpm": ">=11 <12"
+  },
+  "scripts": {
+    "format:check": "biome check --formatter-enabled=true --linter-enabled=false --assist-enabled=false .",
+    "lint": "biome lint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.5",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

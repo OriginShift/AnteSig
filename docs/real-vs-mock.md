@@ -43,7 +43,7 @@ or Monad RPC evidence.
 
 ## Actually completed in the current repository
 
-At M0, the repository contains only:
+The repository contains the M0 baseline:
 
 - project, architecture, security, real-versus-mock, and governance documents;
 - contribution, security reporting, CODEOWNERS, Issue, and pull request
@@ -51,18 +51,33 @@ At M0, the repository contains only:
 - an MIT license; and
 - GitHub repository governance objects and permissions.
 
+This checkout also contains the M1-01 tooling and CI foundation:
+
+- a root-only pnpm workspace;
+- Node 22 and pnpm 11 project constraints;
+- strict no-emit TypeScript validation;
+- Biome formatting and linting;
+- Vitest test-runner infrastructure; and
+- the `quality-gate` GitHub Actions workflow.
+
+This tooling and CI foundation is not a runnable application, protocol
+integration, real or mocked protocol evidence, or a safety guarantee. It does
+not establish any product, chain, evidence, or security capability.
+
 The current repository has not implemented or verified:
 
-- a frontend or backend;
+- a runnable demo, frontend, or backend;
+- any Schema, Fixture, Decision Engine, or business TypeScript implementation;
 - Moss discovery, loading, action, Capability construction, or simulation;
 - Monad RPC or local-fork connectivity;
 - Kuru or PancakeSwap quotes;
 - Receipt, Outcome, Warning, gas, coverage, or ordering extraction;
 - intent alignment, decision logic, report generation, or export;
-- any business schema; or
-- any success or failure fixture.
+- any real address, private key, API key, signing, transaction, or chain
+  integration; or
+- any real receipt, quote, simulation, or other real-chain evidence.
 
-There is no runnable demo at M0.
+There is no runnable demo.
 
 ## Prohibited claims
 
