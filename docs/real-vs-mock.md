@@ -51,9 +51,7 @@ The repository contains the M0 baseline:
 - an MIT license; and
 - GitHub repository governance objects and permissions.
 
-M1-01 engineering and CI infrastructure is under remediation in Draft PR #10.
-It is not complete until it passes the Maintainer Merge Gate. The proposed
-tooling is limited to:
+This checkout also contains the M1-01 tooling and CI foundation:
 
 - a root-only pnpm workspace;
 - Node 22 and pnpm 11 project constraints;
@@ -62,9 +60,9 @@ tooling is limited to:
 - Vitest test-runner infrastructure; and
 - the `quality-gate` GitHub Actions workflow.
 
-This proposed tooling and CI foundation is not a runnable application,
-protocol integration, real or mocked protocol evidence, or a safety guarantee.
-It does not establish any product, chain, evidence, or security capability.
+This tooling and CI foundation is not a runnable application, protocol
+integration, real or mocked protocol evidence, or a safety guarantee. It does
+not establish any product, chain, evidence, or security capability.
 
 The current repository has not implemented or verified:
 

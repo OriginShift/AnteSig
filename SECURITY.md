@@ -2,11 +2,10 @@
 
 ## Current scope
 
-The default branch of Moss-Mini Demo remains at M0 and is not a runnable
-application. M1-01 tooling and CI are under remediation in Draft PR #10 and
-are not complete until they pass the Maintainer Merge Gate. They do not add any
-wallet, signing, mainnet submission, Moss integration, Monad RPC integration,
-or transaction simulation implementation.
+Moss-Mini Demo is not a runnable application. This checkout includes the
+M1-01 tooling and CI foundation, which does not add any wallet, signing,
+mainnet submission, Moss integration, Monad RPC integration, or transaction
+simulation implementation.
 
 The documented security boundary is normative for future work. See
 [docs/security-boundary.md](docs/security-boundary.md).
