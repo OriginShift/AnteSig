@@ -11,11 +11,12 @@ the name of this repository or the application itself.
 
 ## Current status
 
-This repository contains the **M0 - Repository & Architecture Baseline** and
-the completed **M1-01 engineering foundation**. M1-01 provides a root-only
-pnpm workspace, Node 22 and pnpm 11 project constraints, strict no-emit
-TypeScript validation, Biome formatting and linting, Vitest test-runner
-infrastructure, and the `quality-gate` GitHub Actions workflow.
+The default branch remains at the **M0 - Repository & Architecture Baseline**.
+The M1-01 engineering foundation is under remediation in Draft PR #10 and is
+not complete until it passes the Maintainer Merge Gate. Its proposed root-only
+pnpm workspace, Node 22 and pnpm 11 constraints, strict no-emit TypeScript
+validation, Biome formatting and linting, Vitest test-runner infrastructure,
+and `quality-gate` GitHub Actions workflow are tooling and CI only.
 
 This is tooling and CI infrastructure only. There is no runnable demo,
 frontend, backend, Schema, Fixture, Decision Engine, or business TypeScript

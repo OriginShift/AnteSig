@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "noEmit": true,
-    "resolveJsonModule": true,
     "strict": true
   },
-  "files": ["package.json"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["coverage", "dist", "node_modules"]
 }
