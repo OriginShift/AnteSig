@@ -4,6 +4,10 @@ Status: Accepted
 Date: 2026-07-25
 Decision owner: Maintainer
 
+Implementation values and canonical formats are clarified by
+[ADR 0002](./0002-preflight-report-v0-1-implementation-values.md). ADR 0002 is
+part of the fixed v0.1 contract.
+
 ## Context
 
 M1 requires a runtime-validated PreflightReport v0.1 before later work can
