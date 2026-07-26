@@ -46,3 +46,11 @@ Decision owner: Maintainer
 
 Only the Maintainer may mark an ADR Accepted, Superseded, or Rejected. Proposed
 ADRs must be linked from the relevant Issue and pull request.
+
+## Records
+
+| ADR | Status | Decision |
+| --- | --- | --- |
+| [0001](./0001-preflight-report-v0-1-schema-contract.md) | Accepted | PreflightReport v0.1 schema contract |
+| [0002](./0002-preflight-report-v0-1-implementation-values.md) | Accepted | PreflightReport v0.1 implementation values |
+| [0003](./0003-decision-engine-v0-1-contract.md) | Proposed | Decision Engine v0.1 implementation contract |
