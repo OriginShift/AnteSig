@@ -60,6 +60,11 @@ This checkout also contains the M1-01 tooling and CI foundation:
 - Vitest test-runner infrastructure; and
 - the `quality-gate` GitHub Actions workflow.
 
+It also contains the M1-02 `PreflightReport` v0.1 runtime schema package. The
+package validates the fixed report contract using only synthetic test inputs;
+it is not a Fixture, Decision Engine, report generator, or source of real
+evidence.
+
 This tooling and CI foundation is not a runnable application, protocol
 integration, real or mocked protocol evidence, or a safety guarantee. It does
 not establish any product, chain, evidence, or security capability.
@@ -67,7 +72,8 @@ not establish any product, chain, evidence, or security capability.
 The current repository has not implemented or verified:
 
 - a runnable demo, frontend, or backend;
-- any Schema, Fixture, Decision Engine, or business TypeScript implementation;
+- any Fixture, Decision Engine, report generator, or other business TypeScript
+  implementation;
 - Moss discovery, loading, action, Capability construction, or simulation;
 - Monad RPC or local-fork connectivity;
 - Kuru or PancakeSwap quotes;
