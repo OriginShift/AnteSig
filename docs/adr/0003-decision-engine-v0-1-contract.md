@@ -1,6 +1,6 @@
 # ADR 0003: Decision Engine v0.1 Contract
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-26
 Decision owner: Maintainer
 
