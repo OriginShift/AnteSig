@@ -69,7 +69,8 @@ evidence.
 The repository also contains one purely synthetic M1-04 `MANUAL_REVIEW`
 development Fixture used only for Schema validation. It is not Moss, Monad,
 protocol, Quote, Receipt, simulation, or chain evidence. `MANUAL_REVIEW` is not
-a safety conclusion, approval, execution guarantee, or permission to sign.
+a safety conclusion, approval, authorization, execution guarantee, or
+permission to sign.
 
 This tooling and CI foundation is not a runnable application, protocol
 integration, real or mocked protocol evidence, or a safety guarantee. It does

@@ -130,7 +130,7 @@
   "limitations": [
     {
       "code": "SYNTHETIC_DEVELOPMENT_FIXTURE_ONLY",
-      "description": "This synthetic development fixture is only for schema validation. MANUAL_REVIEW is not a safety conclusion, approval, execution guarantee, or permission to sign.",
+      "description": "This synthetic development fixture is only for schema validation. MANUAL_REVIEW is not a safety conclusion, approval, authorization, execution guarantee, or permission to sign.",
       "sourceReferences": ["/intent", "/simulation"]
     }
   ]

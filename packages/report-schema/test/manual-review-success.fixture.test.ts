@@ -109,13 +109,17 @@ describe("MANUAL_REVIEW success fixture", () => {
       ),
     ).toBe(true);
 
-    expect(fixture.limitations).toContainEqual(
-      expect.objectContaining({
-        code: "SYNTHETIC_DEVELOPMENT_FIXTURE_ONLY",
-        description: expect.stringMatching(
-          /synthetic development fixture.*not a safety conclusion.*permission to sign/i,
-        ),
-      }),
+    const limitation = fixture.limitations.find(
+      (item: { code: unknown }) =>
+        item.code === "SYNTHETIC_DEVELOPMENT_FIXTURE_ONLY",
     );
+    expect(limitation).toBeDefined();
+
+    const description = limitation?.description ?? "";
+    expect(description).toMatch(/safety/i);
+    expect(description).toMatch(/approval/i);
+    expect(description).toMatch(/authorization/i);
+    expect(description).toMatch(/execution guarantee/i);
+    expect(description).toMatch(/permission to sign/i);
   });
 });

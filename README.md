@@ -22,11 +22,11 @@ Biome formatting and linting, Vitest test-runner infrastructure, and the
 The runtime schema is a validation contract, and the Fixture is only for
 Schema validation. The Fixture is not Moss, Monad, protocol, Quote, Receipt,
 simulation, or chain evidence. `MANUAL_REVIEW` is not a safety conclusion,
-approval, execution guarantee, or permission to sign. The repository has no
-runnable demo, frontend, backend, Decision Engine, Moss or Monad integration,
-wallet, signing, transaction, or chain integration; it also contains no real
-address, private key, API key, receipt, quote, simulation, or other real-chain
-evidence.
+approval, authorization, execution guarantee, or permission to sign. The
+repository has no runnable demo, frontend, backend, Decision Engine, Moss or
+Monad integration, wallet, signing, transaction, or chain integration; it also
+contains no real address, private key, API key, receipt, quote, simulation, or
+other real-chain evidence.
 
 Do not interpret repository setup, local tooling, CI, or documentation as
 evidence that the target system works, as real-chain evidence, or as a safety
