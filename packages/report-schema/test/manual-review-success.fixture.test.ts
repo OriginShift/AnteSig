@@ -116,6 +116,9 @@ describe("MANUAL_REVIEW success fixture", () => {
     expect(limitation).toBeDefined();
 
     const description = limitation?.description ?? "";
+    expect(description).toContain(
+      "MANUAL_REVIEW is not a safety conclusion, approval, authorization, execution guarantee, or permission to sign.",
+    );
     expect(description).toMatch(/safety/i);
     expect(description).toMatch(/approval/i);
     expect(description).toMatch(/authorization/i);
