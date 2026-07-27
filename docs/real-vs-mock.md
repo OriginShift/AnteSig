@@ -53,7 +53,8 @@ The repository contains the M0 baseline:
 
 This checkout also contains the M1-01 tooling and CI foundation:
 
-- a root-only pnpm workspace;
+- a pnpm workspace with the root project and a registered `packages/*` package
+  boundary;
 - Node 22 and pnpm 11 project constraints;
 - strict no-emit TypeScript validation;
 - Biome formatting and linting;
