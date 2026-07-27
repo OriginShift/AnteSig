@@ -44,8 +44,11 @@ export type {
   PreflightReportInput,
   Provenance,
 } from "./report.js";
-export { SourceReferenceSchema, SourceReferencesSchema } from "./references.js";
-export type { SourceReference } from "./references.js";
+export {
+  JsonPointerSyntaxListSchema,
+  JsonPointerSyntaxSchema,
+} from "./references.js";
+export type { JsonPointerSyntax } from "./references.js";
 export {
   EvmAddressSchema,
   GeneratedAtSchema,
@@ -54,6 +57,7 @@ export {
   NetworkSchema,
   PositiveAmountSchema,
   ProtocolIdSchema,
+  RawArtifactSchema,
   RecordIdSchema,
   ReportIdSchema,
   StableCodeSchema,
@@ -66,6 +70,7 @@ export type {
   Network,
   PositiveAmount,
   ProtocolId,
+  RawArtifact,
   ReportId,
   UnsignedAmount,
 } from "./scalars.js";

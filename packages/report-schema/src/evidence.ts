@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { SourceReferencesSchema } from "./references.js";
+import { JsonPointerSyntaxListSchema } from "./references.js";
 import {
   EvmAddressSchema,
-  JsonValueSchema,
   PositiveAmountSchema,
   ProtocolIdSchema,
+  RawArtifactSchema,
   RecordIdSchema,
   StableCodeSchema,
 } from "./scalars.js";
@@ -18,7 +18,7 @@ export const AvailabilitySchema = z.enum([
 
 export const StructuredReasonSchema = z.strictObject({
   code: StableCodeSchema,
-  sourceReferences: SourceReferencesSchema,
+  sourceReferences: JsonPointerSyntaxListSchema,
 });
 
 export const StructuredFailureSchema = StructuredReasonSchema;
@@ -56,7 +56,7 @@ export const QuoteSchema = z.discriminatedUnion("status", [
     ...QuoteBaseShape,
     status: z.literal("SUCCESS"),
     outputAmount: PositiveAmountSchema,
-    raw: JsonValueSchema,
+    raw: RawArtifactSchema,
   }),
   z.strictObject({
     ...QuoteBaseShape,
@@ -81,19 +81,19 @@ export const SelectionSchema = z.discriminatedUnion("status", [
 export const CapabilitySchema = z.union([
   z.strictObject({
     availability: z.literal("AVAILABLE"),
-    raw: JsonValueSchema,
+    raw: RawArtifactSchema,
   }),
   UnavailableEvidenceSchema,
 ]);
 
 export const ReceiptRecordSchema = z.strictObject({
   status: z.enum(["SUCCESS", "FAILED"]),
-  raw: JsonValueSchema,
+  raw: RawArtifactSchema,
 });
 
 export const OutcomeRecordSchema = z.strictObject({
   status: z.enum(["SUCCESS", "FAILED"]),
-  raw: JsonValueSchema,
+  raw: RawArtifactSchema,
 });
 
 export const ReceiptsEvidenceSchema = z.union([
@@ -115,7 +115,7 @@ export const OutcomesEvidenceSchema = z.union([
 export const WarningsEvidenceSchema = z.union([
   z.strictObject({
     availability: z.literal("AVAILABLE"),
-    items: z.array(JsonValueSchema),
+    items: z.array(RawArtifactSchema),
   }),
   UnavailableEvidenceSchema,
 ]);
@@ -124,7 +124,7 @@ export const CoverageEvidenceSchema = z.union([
   z.strictObject({
     availability: z.literal("AVAILABLE"),
     complete: z.boolean(),
-    raw: JsonValueSchema,
+    raw: RawArtifactSchema,
   }),
   UnavailableEvidenceSchema,
 ]);
@@ -133,7 +133,7 @@ export const OrderingEvidenceSchema = z.union([
   z.strictObject({
     availability: z.literal("AVAILABLE"),
     valid: z.boolean(),
-    raw: JsonValueSchema,
+    raw: RawArtifactSchema,
   }),
   UnavailableEvidenceSchema,
 ]);
@@ -142,7 +142,7 @@ export const StateContinuityEvidenceSchema = z.union([
   z.strictObject({
     availability: z.literal("AVAILABLE"),
     continuous: z.boolean(),
-    raw: JsonValueSchema,
+    raw: RawArtifactSchema,
   }),
   UnavailableEvidenceSchema,
 ]);
@@ -151,7 +151,7 @@ export const SimulationSchema = z.union([
   z.strictObject({
     availability: z.literal("AVAILABLE"),
     executionStatus: z.enum(["SUCCESS", "FAILED", "INTERRUPTED"]),
-    raw: JsonValueSchema,
+    raw: RawArtifactSchema,
     receipts: ReceiptsEvidenceSchema,
     outcomes: OutcomesEvidenceSchema,
     warnings: WarningsEvidenceSchema,
@@ -166,7 +166,7 @@ export const AlignmentCheckSchema = z.strictObject({
   checkId: RecordIdSchema,
   critical: z.boolean(),
   status: z.enum(["PASS", "FAIL", "REVIEW"]),
-  sourceReferences: SourceReferencesSchema,
+  sourceReferences: JsonPointerSyntaxListSchema,
 });
 
 export const DecisionSchema = z.discriminatedUnion("status", [
@@ -180,7 +180,7 @@ export const DecisionSchema = z.discriminatedUnion("status", [
 export const LimitationSchema = z.strictObject({
   code: StableCodeSchema,
   description: z.string().min(1),
-  sourceReferences: SourceReferencesSchema,
+  sourceReferences: JsonPointerSyntaxListSchema,
 });
 
 export type Availability = z.infer<typeof AvailabilitySchema>;

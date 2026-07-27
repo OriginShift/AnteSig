@@ -107,6 +107,9 @@ export const StableCodeSchema = z
   .brand<"StableCode">();
 export const RecordIdSchema = z.string().min(1).max(128).brand<"RecordId">();
 export const JsonValueSchema = z.json();
+export const RawArtifactSchema = z.json().refine((value) => value !== null, {
+  message: "Raw artifact must be present and non-null",
+});
 
 export type EvmAddress = z.infer<typeof EvmAddressSchema>;
 export type ProtocolId = z.infer<typeof ProtocolIdSchema>;
@@ -116,3 +119,4 @@ export type ReportId = z.infer<typeof ReportIdSchema>;
 export type GeneratedAt = z.infer<typeof GeneratedAtSchema>;
 export type Network = z.infer<typeof NetworkSchema>;
 export type JsonValue = z.infer<typeof JsonValueSchema>;
+export type RawArtifact = z.infer<typeof RawArtifactSchema>;

@@ -1,18 +1,5 @@
 import { z } from "zod";
 
-const ALLOWED_ROOTS = new Set([
-  "intent",
-  "quotes",
-  "selection",
-  "capability",
-  "simulation",
-]);
-const FORBIDDEN_SEGMENTS = new Set([
-  "display",
-  "prose",
-  "extension",
-  "extensions",
-]);
 const ARRAY_INDEX_PATTERN = /^(?:0|[1-9][0-9]*)$/;
 
 function hasCanonicalEscapes(pointer: string): boolean {
@@ -35,7 +22,7 @@ export function decodeJsonPointer(pointer: string): string[] {
     .map((segment) => segment.replaceAll("~1", "/").replaceAll("~0", "~"));
 }
 
-export const SourceReferenceSchema = z
+export const JsonPointerSyntaxSchema = z
   .string()
   .min(1)
   .superRefine((value, context) => {
@@ -58,10 +45,10 @@ export const SourceReferenceSchema = z
       });
     }
   })
-  .brand<"SourceReference">();
+  .brand<"JsonPointerSyntax">();
 
-export const SourceReferencesSchema = z
-  .array(SourceReferenceSchema)
+export const JsonPointerSyntaxListSchema = z
+  .array(JsonPointerSyntaxSchema)
   .min(1)
   .superRefine((references, context) => {
     if (new Set(references).size !== references.length) {
@@ -71,16 +58,6 @@ export const SourceReferencesSchema = z
       });
     }
   });
-
-export function isAllowedSourceReference(pointer: string): boolean {
-  const segments = decodeJsonPointer(pointer);
-  const [root] = segments;
-  return (
-    root !== undefined &&
-    ALLOWED_ROOTS.has(root) &&
-    !segments.some((segment) => FORBIDDEN_SEGMENTS.has(segment))
-  );
-}
 
 export function resolvesJsonPointer(
   document: unknown,
@@ -113,4 +90,4 @@ export function resolvesJsonPointer(
   return true;
 }
 
-export type SourceReference = z.infer<typeof SourceReferenceSchema>;
+export type JsonPointerSyntax = z.infer<typeof JsonPointerSyntaxSchema>;

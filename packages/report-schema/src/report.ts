@@ -9,11 +9,7 @@ import {
   SelectionSchema,
   SimulationSchema,
 } from "./evidence.js";
-import {
-  isAllowedSourceReference,
-  resolvesJsonPointer,
-  type SourceReferencesSchema,
-} from "./references.js";
+import { decodeJsonPointer, type JsonPointerSyntax } from "./references.js";
 import {
   EvmAddressSchema,
   GeneratedAtSchema,
@@ -23,6 +19,10 @@ import {
   ProtocolIdSchema,
   ReportIdSchema,
 } from "./scalars.js";
+import {
+  validateContextualSourceReferences,
+  type SourceReferenceOccurrence,
+} from "./source-reference-context.js";
 
 export const IntentSchema = z
   .strictObject({
@@ -73,7 +73,6 @@ const PreflightReportBaseSchema = z.strictObject({
 });
 
 type ReportBase = z.infer<typeof PreflightReportBaseSchema>;
-type ReferenceList = z.infer<typeof SourceReferencesSchema>;
 
 function assetsEqual(
   left: ReportBase["intent"]["inputAsset"],
@@ -91,50 +90,75 @@ function assetsEqual(
   );
 }
 
-function collectReferenceLists(report: ReportBase): ReferenceList[] {
-  const references: ReferenceList[] = [];
+function collectReferenceOccurrences(
+  report: ReportBase,
+): SourceReferenceOccurrence[] {
+  const occurrences: SourceReferenceOccurrence[] = [];
+  const collect = (
+    sourceReferences: readonly JsonPointerSyntax[],
+    ownerPath: readonly (string | number)[],
+  ): void => {
+    for (const [index, pointer] of sourceReferences.entries()) {
+      occurrences.push({
+        pointer,
+        ownerPath,
+        metadataPath: [...ownerPath, "sourceReferences", index],
+      });
+    }
+  };
 
-  for (const quote of report.quotes) {
+  for (const [index, quote] of report.quotes.entries()) {
     if (quote.status === "FAILED") {
-      references.push(quote.failure.sourceReferences);
+      collect(quote.failure.sourceReferences, ["quotes", index, "failure"]);
     }
   }
-  references.push(report.selection.reason.sourceReferences);
+  collect(report.selection.reason.sourceReferences, ["selection", "reason"]);
 
   if (report.capability.availability !== "AVAILABLE") {
-    references.push(report.capability.failure.sourceReferences);
+    collect(report.capability.failure.sourceReferences, [
+      "capability",
+      "failure",
+    ]);
   }
 
   if (report.simulation.availability !== "AVAILABLE") {
-    references.push(report.simulation.failure.sourceReferences);
+    collect(report.simulation.failure.sourceReferences, [
+      "simulation",
+      "failure",
+    ]);
   } else {
-    for (const evidence of [
-      report.simulation.receipts,
-      report.simulation.outcomes,
-      report.simulation.warnings,
-      report.simulation.coverage,
-      report.simulation.ordering,
-      report.simulation.stateContinuity,
-    ]) {
-      if (evidence.availability !== "AVAILABLE") {
-        references.push(evidence.failure.sourceReferences);
+    const evidence = {
+      receipts: report.simulation.receipts,
+      outcomes: report.simulation.outcomes,
+      warnings: report.simulation.warnings,
+      coverage: report.simulation.coverage,
+      ordering: report.simulation.ordering,
+      stateContinuity: report.simulation.stateContinuity,
+    };
+    for (const [name, value] of Object.entries(evidence)) {
+      if (value.availability !== "AVAILABLE") {
+        collect(value.failure.sourceReferences, [
+          "simulation",
+          name,
+          "failure",
+        ]);
       }
     }
   }
 
-  for (const check of report.alignment.checks) {
-    references.push(check.sourceReferences);
+  for (const [index, check] of report.alignment.checks.entries()) {
+    collect(check.sourceReferences, ["alignment", "checks", index]);
   }
   if (report.decision.status === "STOP") {
-    for (const reason of report.decision.reasons) {
-      references.push(reason.sourceReferences);
+    for (const [index, reason] of report.decision.reasons.entries()) {
+      collect(reason.sourceReferences, ["decision", "reasons", index]);
     }
   }
-  for (const limitation of report.limitations) {
-    references.push(limitation.sourceReferences);
+  for (const [index, limitation] of report.limitations.entries()) {
+    collect(limitation.sourceReferences, ["limitations", index]);
   }
 
-  return references;
+  return occurrences;
 }
 
 function addIssue(
@@ -297,32 +321,199 @@ function validateManualReview(
   }
 }
 
-function isReferenceTo(reference: string, sourcePath: string): boolean {
-  return reference === sourcePath || reference.startsWith(`${sourcePath}/`);
+interface StopTrigger {
+  description: string;
+  matches: (targetPath: readonly string[]) => boolean;
 }
 
-function validateCriticalAlignmentStopReasons(
-  report: ReportBase,
-  references: readonly string[],
-  context: z.RefinementCtx,
-): void {
-  for (const check of report.alignment.checks) {
-    if (check.critical && check.status !== "PASS") {
-      const hasUnderlyingSource = check.sourceReferences.some(
-        (sourceReference) =>
-          references.some((reference) =>
-            isReferenceTo(reference, sourceReference),
-          ),
-      );
-      if (!hasUnderlyingSource) {
-        addIssue(
-          context,
-          "STOP reason must reference evidence underlying a critical alignment failure",
-          ["decision", "reasons"],
+function pathIsAtOrBelow(
+  targetPath: readonly string[],
+  sourcePath: readonly string[],
+): boolean {
+  return (
+    sourcePath.length <= targetPath.length &&
+    sourcePath.every((segment, index) => targetPath[index] === segment)
+  );
+}
+
+function pathEquals(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((segment, index) => right[index] === segment)
+  );
+}
+
+function sourceRecordTrigger(
+  description: string,
+  sourcePath: readonly string[],
+): StopTrigger {
+  return {
+    description,
+    matches: (targetPath) => pathIsAtOrBelow(targetPath, sourcePath),
+  };
+}
+
+function collectStopTriggers(report: ReportBase): StopTrigger[] {
+  const triggers: StopTrigger[] = [];
+
+  if (report.selection.status === "NOT_SELECTED") {
+    triggers.push(
+      sourceRecordTrigger("the no-selection record", ["selection"]),
+    );
+  }
+  if (report.capability.availability !== "AVAILABLE") {
+    triggers.push(
+      sourceRecordTrigger("the unavailable Capability evidence", [
+        "capability",
+      ]),
+    );
+  }
+
+  if (report.simulation.availability !== "AVAILABLE") {
+    triggers.push(
+      sourceRecordTrigger("the unavailable simulation evidence", [
+        "simulation",
+      ]),
+    );
+  } else {
+    const simulation = report.simulation;
+    if (simulation.executionStatus !== "SUCCESS") {
+      triggers.push({
+        description: "the non-successful simulation execution",
+        matches: (targetPath) =>
+          pathEquals(targetPath, ["simulation"]) ||
+          pathIsAtOrBelow(targetPath, ["simulation", "executionStatus"]) ||
+          pathIsAtOrBelow(targetPath, ["simulation", "raw"]),
+      });
+    }
+
+    const components = {
+      receipts: simulation.receipts,
+      outcomes: simulation.outcomes,
+      warnings: simulation.warnings,
+      coverage: simulation.coverage,
+      ordering: simulation.ordering,
+      stateContinuity: simulation.stateContinuity,
+    };
+    for (const [name, value] of Object.entries(components)) {
+      if (value.availability !== "AVAILABLE") {
+        triggers.push(
+          sourceRecordTrigger(`the unavailable ${name} evidence`, [
+            "simulation",
+            name,
+          ]),
         );
       }
     }
+
+    if (simulation.warnings.availability === "AVAILABLE") {
+      for (const [index] of simulation.warnings.items.entries()) {
+        triggers.push(
+          sourceRecordTrigger("an original Warning record", [
+            "simulation",
+            "warnings",
+            "items",
+            String(index),
+          ]),
+        );
+      }
+    }
+    if (simulation.receipts.availability === "AVAILABLE") {
+      if (simulation.receipts.items.length === 0) {
+        triggers.push(
+          sourceRecordTrigger("the empty Receipt collection", [
+            "simulation",
+            "receipts",
+          ]),
+        );
+      }
+      for (const [index, receipt] of simulation.receipts.items.entries()) {
+        if (receipt.status === "FAILED") {
+          triggers.push(
+            sourceRecordTrigger("the failed Receipt record", [
+              "simulation",
+              "receipts",
+              "items",
+              String(index),
+            ]),
+          );
+        }
+      }
+    }
+    if (simulation.outcomes.availability === "AVAILABLE") {
+      if (simulation.outcomes.items.length === 0) {
+        triggers.push(
+          sourceRecordTrigger("the empty Outcome collection", [
+            "simulation",
+            "outcomes",
+          ]),
+        );
+      }
+      for (const [index, outcome] of simulation.outcomes.items.entries()) {
+        if (outcome.status === "FAILED") {
+          triggers.push(
+            sourceRecordTrigger("the failed Outcome record", [
+              "simulation",
+              "outcomes",
+              "items",
+              String(index),
+            ]),
+          );
+        }
+      }
+    }
+    if (
+      simulation.coverage.availability === "AVAILABLE" &&
+      !simulation.coverage.complete
+    ) {
+      triggers.push(
+        sourceRecordTrigger("the incomplete coverage record", [
+          "simulation",
+          "coverage",
+        ]),
+      );
+    }
+    if (
+      simulation.ordering.availability === "AVAILABLE" &&
+      !simulation.ordering.valid
+    ) {
+      triggers.push(
+        sourceRecordTrigger("the invalid ordering record", [
+          "simulation",
+          "ordering",
+        ]),
+      );
+    }
+    if (
+      simulation.stateContinuity.availability === "AVAILABLE" &&
+      !simulation.stateContinuity.continuous
+    ) {
+      triggers.push(
+        sourceRecordTrigger("the interrupted state-continuity record", [
+          "simulation",
+          "stateContinuity",
+        ]),
+      );
+    }
   }
+
+  for (const check of report.alignment.checks) {
+    if (check.critical && check.status !== "PASS") {
+      for (const sourceReference of check.sourceReferences) {
+        const sourcePath = decodeJsonPointer(sourceReference);
+        triggers.push({
+          description:
+            "each source record underlying a critical alignment failure",
+          matches: (targetPath) => pathIsAtOrBelow(targetPath, sourcePath),
+        });
+      }
+    }
+  }
+
+  return triggers;
 }
 
 function validateStopReasonReferences(
@@ -333,108 +524,38 @@ function validateStopReasonReferences(
     return;
   }
 
-  const references = report.decision.reasons.flatMap(
-    (reason) => reason.sourceReferences,
+  const triggers = collectStopTriggers(report);
+  const references = report.decision.reasons.flatMap((reason, reasonIndex) =>
+    reason.sourceReferences.map((pointer, referenceIndex) => ({
+      pointer,
+      targetPath: decodeJsonPointer(pointer),
+      path: [
+        "decision",
+        "reasons",
+        reasonIndex,
+        "sourceReferences",
+        referenceIndex,
+      ],
+    })),
   );
-  const requiresReference = (sourcePath: string, description: string): void => {
-    if (!references.some((reference) => isReferenceTo(reference, sourcePath))) {
-      addIssue(context, `STOP reason must reference ${description}`, [
+
+  for (const trigger of triggers) {
+    if (!references.some(({ targetPath }) => trigger.matches(targetPath))) {
+      addIssue(context, `STOP reason must reference ${trigger.description}`, [
         "decision",
         "reasons",
       ]);
     }
-  };
-
-  if (report.selection.status === "NOT_SELECTED") {
-    requiresReference("/selection", "the no-selection record");
   }
-  if (report.capability.availability !== "AVAILABLE") {
-    requiresReference("/capability", "the unavailable Capability evidence");
-  }
-  if (report.simulation.availability !== "AVAILABLE") {
-    requiresReference("/simulation", "the unavailable simulation evidence");
-    validateCriticalAlignmentStopReasons(report, references, context);
-    return;
-  }
-
-  const simulation = report.simulation;
-  if (simulation.executionStatus !== "SUCCESS") {
-    requiresReference("/simulation", "the non-successful simulation evidence");
-  }
-
-  const evidence = [
-    ["receipts", simulation.receipts],
-    ["outcomes", simulation.outcomes],
-    ["warnings", simulation.warnings],
-    ["coverage", simulation.coverage],
-    ["ordering", simulation.ordering],
-    ["stateContinuity", simulation.stateContinuity],
-  ] as const;
-  for (const [name, value] of evidence) {
-    if (value.availability !== "AVAILABLE") {
-      requiresReference(
-        `/simulation/${name}`,
-        `the unavailable simulation ${name} evidence`,
-      );
-    }
-  }
-
-  if (simulation.warnings.availability === "AVAILABLE") {
-    const warningItemPrefix = "/simulation/warnings/items/";
-    if (
-      simulation.warnings.items.length > 0 &&
-      !references.some((reference) => reference.startsWith(warningItemPrefix))
-    ) {
+  for (const reference of references) {
+    if (!triggers.some((trigger) => trigger.matches(reference.targetPath))) {
       addIssue(
         context,
-        "STOP reason must reference an original Warning record",
-        ["decision", "reasons"],
+        "STOP source reference is unrelated to every actual STOP trigger",
+        reference.path,
       );
     }
   }
-  if (simulation.receipts.availability === "AVAILABLE") {
-    for (const [index, receipt] of simulation.receipts.items.entries()) {
-      if (receipt.status === "FAILED") {
-        requiresReference(
-          `/simulation/receipts/items/${index}`,
-          "the failed Receipt record",
-        );
-      }
-    }
-  }
-  if (simulation.outcomes.availability === "AVAILABLE") {
-    for (const [index, outcome] of simulation.outcomes.items.entries()) {
-      if (outcome.status === "FAILED") {
-        requiresReference(
-          `/simulation/outcomes/items/${index}`,
-          "the failed Outcome record",
-        );
-      }
-    }
-  }
-  if (
-    simulation.coverage.availability === "AVAILABLE" &&
-    !simulation.coverage.complete
-  ) {
-    requiresReference("/simulation/coverage", "the incomplete coverage record");
-  }
-  if (
-    simulation.ordering.availability === "AVAILABLE" &&
-    !simulation.ordering.valid
-  ) {
-    requiresReference("/simulation/ordering", "the invalid ordering record");
-  }
-  if (
-    simulation.stateContinuity.availability === "AVAILABLE" &&
-    !simulation.stateContinuity.continuous
-  ) {
-    requiresReference(
-      "/simulation/stateContinuity",
-      "the interrupted state-continuity record",
-    );
-  }
-
-  validateCriticalAlignmentStopReasons(report, references, context);
 }
 
 export const PreflightReportSchema = PreflightReportBaseSchema.superRefine(
@@ -456,22 +577,12 @@ export const PreflightReportSchema = PreflightReportBaseSchema.superRefine(
     validateManualReview(report, context);
     validateStopReasonReferences(report, context);
 
-    for (const references of collectReferenceLists(report)) {
-      for (const reference of references) {
-        if (!isAllowedSourceReference(reference)) {
-          addIssue(
-            context,
-            "Source reference targets a forbidden or derived report location",
-            [],
-          );
-        } else if (!resolvesJsonPointer(report, reference)) {
-          addIssue(
-            context,
-            "Source reference does not resolve within the report",
-            [],
-          );
-        }
-      }
+    const occurrences = collectReferenceOccurrences(report);
+    for (const issue of validateContextualSourceReferences(
+      report,
+      occurrences,
+    )) {
+      addIssue(context, issue.message, issue.path);
     }
   },
 );
