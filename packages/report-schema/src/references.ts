@@ -32,10 +32,16 @@ export const JsonPointerSyntaxSchema = z
         message: "Source reference must begin with /",
       });
     }
-    if (value.includes("#") || /%[0-9a-fA-F]{2}/.test(value)) {
+    if (value.startsWith("#")) {
       context.addIssue({
         code: "custom",
-        message: "Fragments and percent encoding are forbidden",
+        message: "URI fragment representation is forbidden",
+      });
+    }
+    if (/%[0-9a-fA-F]{2}/.test(value)) {
+      context.addIssue({
+        code: "custom",
+        message: "Percent encoding is forbidden",
       });
     }
     if (!hasCanonicalEscapes(value)) {

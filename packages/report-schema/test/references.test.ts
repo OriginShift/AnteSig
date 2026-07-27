@@ -19,19 +19,17 @@ describe("JSON Pointer syntax and contextual SourceReference validation", () => 
     "/alignment/checks/0",
     "/does/not/exist",
     "/capability/raw/display",
+    "/capability/raw/tx#hash",
   ])("accepts syntax without claiming report context for %s", (pointer) => {
     expect(JsonPointerSyntaxSchema.safeParse(pointer).success).toBe(true);
   });
 
-  it.each([
-    "",
-    "intent",
-    "/intent#fragment",
-    "/intent%2Faccount",
-    "/intent/~2",
-  ])("rejects invalid pointer syntax %s", (pointer) => {
-    expect(JsonPointerSyntaxSchema.safeParse(pointer).success).toBe(false);
-  });
+  it.each(["", "intent", "#/intent", "/intent%2Faccount", "/intent/~2"])(
+    "rejects invalid pointer syntax %s",
+    (pointer) => {
+      expect(JsonPointerSyntaxSchema.safeParse(pointer).success).toBe(false);
+    },
+  );
 
   it.each([
     ["a decision path", "/decision"],
@@ -161,5 +159,21 @@ describe("JSON Pointer syntax and contextual SourceReference validation", () => 
     expect(parsed.data.quotes[0]).toMatchObject({ raw: quote.raw });
     expect(parsed.data.capability).toEqual(report.capability);
     expect(parsed.data.simulation).toEqual(report.simulation);
+  });
+
+  it("accepts # as an ordinary token character in source-owned raw data", () => {
+    const report = buildManualReviewReport();
+    const check = report.alignment.checks[0];
+    if (check === undefined) {
+      throw new Error("synthetic report must contain an Alignment check");
+    }
+
+    report.capability = {
+      availability: "AVAILABLE",
+      raw: { "tx#hash": "synthetic-transaction-hash" },
+    };
+    check.sourceReferences = ["/capability/raw/tx#hash"];
+
+    expect(PreflightReportSchema.safeParse(report).success).toBe(true);
   });
 });
