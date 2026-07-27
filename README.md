@@ -13,16 +13,20 @@ the name of this repository or the application itself.
 
 This checkout contains the **M0 - Repository & Architecture Baseline**, the
 M1-01 engineering foundation, and the M1-02 `PreflightReport` v0.1 runtime
-schema package. The engineering foundation provides a pnpm workspace, Node 22
-and pnpm 11 project constraints, strict no-emit TypeScript validation, Biome
-formatting and linting, Vitest test-runner infrastructure, and the
+schema package. It also contains one purely synthetic M1-04 `MANUAL_REVIEW`
+development Fixture. The engineering foundation provides a pnpm workspace,
+Node 22 and pnpm 11 project constraints, strict no-emit TypeScript validation,
+Biome formatting and linting, Vitest test-runner infrastructure, and the
 `quality-gate` GitHub Actions workflow.
 
-The runtime schema is a validation contract, not a runnable demo, frontend,
-backend, Fixture, Decision Engine, or protocol integration. The repository has
-no Moss or Monad integration, wallet, signing, transaction, or chain
-integration; it also contains no real address, private key, API key, receipt,
-quote, simulation, or other real-chain evidence.
+The runtime schema is a validation contract, and the Fixture is only for
+Schema validation. The Fixture is not Moss, Monad, protocol, Quote, Receipt,
+simulation, or chain evidence. `MANUAL_REVIEW` is not a safety conclusion,
+approval, execution guarantee, or permission to sign. The repository has no
+runnable demo, frontend, backend, Decision Engine, Moss or Monad integration,
+wallet, signing, transaction, or chain integration; it also contains no real
+address, private key, API key, receipt, quote, simulation, or other real-chain
+evidence.
 
 Do not interpret repository setup, local tooling, CI, or documentation as
 evidence that the target system works, as real-chain evidence, or as a safety
