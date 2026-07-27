@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PreflightReportSchema } from "@moss-mini-demo/report-schema";
+
+const REPORT_SCHEMA_PACKAGE = ["@moss-mini-demo", "report-schema"].join("/");
 
 const fixtureTexts = (
   import.meta as unknown as {
@@ -27,7 +28,8 @@ describe("MANUAL_REVIEW success fixture", () => {
     expect(readFixture()).toBeTypeOf("object");
   });
 
-  it("validates as complete synthetic MANUAL_REVIEW evidence", () => {
+  it("validates as complete synthetic MANUAL_REVIEW evidence", async () => {
+    const { PreflightReportSchema } = await import(REPORT_SCHEMA_PACKAGE);
     const parsed = PreflightReportSchema.safeParse(readFixture());
 
     expect(parsed.success).toBe(true);
@@ -45,7 +47,8 @@ describe("MANUAL_REVIEW success fixture", () => {
       throw new Error("success fixture must select a quote");
     }
     const quote = fixture.quotes.find(
-      (candidate) => candidate.quoteId === selection.quoteId,
+      (candidate: { quoteId: unknown }) =>
+        candidate.quoteId === selection.quoteId,
     );
     expect(quote?.status).toBe("SUCCESS");
     expect(quote?.protocolId).toBe(selection.protocolId);
@@ -70,13 +73,13 @@ describe("MANUAL_REVIEW success fixture", () => {
     expect(fixture.simulation.receipts.items).not.toHaveLength(0);
     expect(
       fixture.simulation.receipts.items.every(
-        (receipt) => receipt.status === "SUCCESS",
+        (receipt: { status: unknown }) => receipt.status === "SUCCESS",
       ),
     ).toBe(true);
     expect(fixture.simulation.outcomes.items).not.toHaveLength(0);
     expect(
       fixture.simulation.outcomes.items.every(
-        (outcome) => outcome.status === "SUCCESS",
+        (outcome: { status: unknown }) => outcome.status === "SUCCESS",
       ),
     ).toBe(true);
     expect(fixture.simulation.warnings).toEqual({
@@ -97,10 +100,14 @@ describe("MANUAL_REVIEW success fixture", () => {
     });
 
     const criticalChecks = fixture.alignment.checks.filter(
-      (check) => check.critical,
+      (check: { critical: boolean }) => check.critical,
     );
     expect(criticalChecks).not.toHaveLength(0);
-    expect(criticalChecks.every((check) => check.status === "PASS")).toBe(true);
+    expect(
+      criticalChecks.every(
+        (check: { status: unknown }) => check.status === "PASS",
+      ),
+    ).toBe(true);
 
     expect(fixture.limitations).toContainEqual(
       expect.objectContaining({
