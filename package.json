@@ -8,11 +8,13 @@
     "pnpm": ">=11 <12"
   },
   "scripts": {
-    "format:check": "biome check --formatter-enabled=true --linter-enabled=false --assist-enabled=false .",
-    "lint": "biome lint .",
+    "build": "pnpm --filter @moss-mini-demo/report-schema build",
+    "format:check": "biome check --formatter-enabled=true --linter-enabled=false --assist-enabled=false --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
+    "lint": "biome lint --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
+    "test:package-import": "node packages/report-schema/test/public-entry.smoke.mjs",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:package-import && pnpm test"
   },
   "dependencies": {
     "zod": "4.4.3"
