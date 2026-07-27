@@ -66,6 +66,12 @@ package validates the fixed report contract using only synthetic test inputs;
 it is not a Fixture, Decision Engine, report generator, or source of real
 evidence.
 
+The repository also contains one purely synthetic M1-04 `MANUAL_REVIEW`
+development Fixture used only for Schema validation. It is not Moss, Monad,
+protocol, Quote, Receipt, simulation, or chain evidence. `MANUAL_REVIEW` is not
+a safety conclusion, approval, authorization, execution guarantee, or
+permission to sign.
+
 This tooling and CI foundation is not a runnable application, protocol
 integration, real or mocked protocol evidence, or a safety guarantee. It does
 not establish any product, chain, evidence, or security capability.
@@ -73,8 +79,8 @@ not establish any product, chain, evidence, or security capability.
 The current repository has not implemented or verified:
 
 - a runnable demo, frontend, or backend;
-- any Fixture, Decision Engine, report generator, or other business TypeScript
-  implementation;
+- any STOP Fixture, Decision Engine, report generator, or other business
+  TypeScript implementation;
 - Moss discovery, loading, action, Capability construction, or simulation;
 - Monad RPC or local-fork connectivity;
 - Kuru or PancakeSwap quotes;
