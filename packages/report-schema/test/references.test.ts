@@ -98,8 +98,11 @@ describe("JSON Pointer syntax and contextual SourceReference validation", () => 
       status: "STOP",
       reasons: [
         {
-          code: "SYNTHETIC_COMPONENT_CYCLE",
-          sourceReferences: ["/simulation/receipts", "/simulation/outcomes"],
+          code: "REQUIRED_EVIDENCE_MISSING",
+          sourceReferences: [
+            "/simulation/receipts/availability",
+            "/simulation/outcomes/availability",
+          ],
         },
       ],
     };

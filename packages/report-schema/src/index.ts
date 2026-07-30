@@ -14,6 +14,9 @@ export {
   ReceiptsEvidenceSchema,
   SelectionSchema,
   SimulationSchema,
+  STOP_REASON_CODES_V0_1,
+  StopReasonCodeV0_1Schema,
+  StopReasonV0_1Schema,
   StateContinuityEvidenceSchema,
   StructuredFailureSchema,
   StructuredReasonSchema,
@@ -30,15 +33,19 @@ export type {
   Quote,
   Selection,
   Simulation,
+  StopReasonCodeV0_1,
+  StopReasonV0_1,
 } from "./evidence.js";
 export {
   AlignmentSchema,
+  DecisionInputV0_1Schema,
   IntentSchema,
   PreflightReportSchema,
   ProvenanceSchema,
 } from "./report.js";
 export type {
   Alignment,
+  DecisionInputV0_1,
   Intent,
   PreflightReport,
   PreflightReportInput,

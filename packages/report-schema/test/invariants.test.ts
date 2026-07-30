@@ -238,7 +238,7 @@ describe("PreflightReport v0.1 cross-field invariants", () => {
     }
     report.decision.reasons = [
       {
-        code: "SYNTHETIC_UNRELATED_REASON",
+        code: "NO_VALID_SELECTION",
         sourceReferences: ["/intent"],
       },
     ];

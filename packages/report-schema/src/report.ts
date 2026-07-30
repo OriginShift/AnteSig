@@ -8,8 +8,9 @@ import {
   QuoteSchema,
   SelectionSchema,
   SimulationSchema,
+  type StopReasonCodeV0_1,
 } from "./evidence.js";
-import { decodeJsonPointer, type JsonPointerSyntax } from "./references.js";
+import type { JsonPointerSyntax } from "./references.js";
 import {
   EvmAddressSchema,
   GeneratedAtSchema,
@@ -56,7 +57,7 @@ export const ProvenanceSchema = z.enum([
   "LIVE_SOURCE",
 ]);
 
-const PreflightReportBaseSchema = z.strictObject({
+const SourceReportShape = {
   schemaVersion: z.literal("0.1"),
   reportId: ReportIdSchema,
   generatedAt: GeneratedAtSchema,
@@ -68,14 +69,20 @@ const PreflightReportBaseSchema = z.strictObject({
   capability: CapabilitySchema,
   simulation: SimulationSchema,
   alignment: AlignmentSchema,
+};
+
+const DecisionInputBaseSchema = z.strictObject(SourceReportShape);
+const PreflightReportBaseSchema = z.strictObject({
+  ...SourceReportShape,
   decision: DecisionSchema,
   limitations: z.array(LimitationSchema),
 });
 
+type DecisionInputBase = z.infer<typeof DecisionInputBaseSchema>;
 type ReportBase = z.infer<typeof PreflightReportBaseSchema>;
 
 function assetsEqual(
-  left: ReportBase["intent"]["inputAsset"],
+  left: DecisionInputBase["intent"]["inputAsset"],
   right: unknown,
 ): boolean {
   if (typeof right !== "object" || right === null || !("kind" in right)) {
@@ -90,8 +97,16 @@ function assetsEqual(
   );
 }
 
-function collectReferenceOccurrences(
-  report: ReportBase,
+function addIssue(
+  context: z.RefinementCtx,
+  message: string,
+  path: PropertyKey[],
+): void {
+  context.addIssue({ code: "custom", message, path });
+}
+
+function collectInputReferenceOccurrences(
+  input: DecisionInputBase,
 ): SourceReferenceOccurrence[] {
   const occurrences: SourceReferenceOccurrence[] = [];
   const collect = (
@@ -107,33 +122,33 @@ function collectReferenceOccurrences(
     }
   };
 
-  for (const [index, quote] of report.quotes.entries()) {
+  for (const [index, quote] of input.quotes.entries()) {
     if (quote.status === "FAILED") {
       collect(quote.failure.sourceReferences, ["quotes", index, "failure"]);
     }
   }
-  collect(report.selection.reason.sourceReferences, ["selection", "reason"]);
+  collect(input.selection.reason.sourceReferences, ["selection", "reason"]);
 
-  if (report.capability.availability !== "AVAILABLE") {
-    collect(report.capability.failure.sourceReferences, [
+  if (input.capability.availability !== "AVAILABLE") {
+    collect(input.capability.failure.sourceReferences, [
       "capability",
       "failure",
     ]);
   }
 
-  if (report.simulation.availability !== "AVAILABLE") {
-    collect(report.simulation.failure.sourceReferences, [
+  if (input.simulation.availability !== "AVAILABLE") {
+    collect(input.simulation.failure.sourceReferences, [
       "simulation",
       "failure",
     ]);
   } else {
     const evidence = {
-      receipts: report.simulation.receipts,
-      outcomes: report.simulation.outcomes,
-      warnings: report.simulation.warnings,
-      coverage: report.simulation.coverage,
-      ordering: report.simulation.ordering,
-      stateContinuity: report.simulation.stateContinuity,
+      receipts: input.simulation.receipts,
+      outcomes: input.simulation.outcomes,
+      warnings: input.simulation.warnings,
+      coverage: input.simulation.coverage,
+      ordering: input.simulation.ordering,
+      stateContinuity: input.simulation.stateContinuity,
     };
     for (const [name, value] of Object.entries(evidence)) {
       if (value.availability !== "AVAILABLE") {
@@ -146,9 +161,30 @@ function collectReferenceOccurrences(
     }
   }
 
-  for (const [index, check] of report.alignment.checks.entries()) {
+  for (const [index, check] of input.alignment.checks.entries()) {
     collect(check.sourceReferences, ["alignment", "checks", index]);
   }
+
+  return occurrences;
+}
+
+function collectReportReferenceOccurrences(
+  report: ReportBase,
+): SourceReferenceOccurrence[] {
+  const occurrences = collectInputReferenceOccurrences(report);
+  const collect = (
+    sourceReferences: readonly JsonPointerSyntax[],
+    ownerPath: readonly (string | number)[],
+  ): void => {
+    for (const [index, pointer] of sourceReferences.entries()) {
+      occurrences.push({
+        pointer,
+        ownerPath,
+        metadataPath: [...ownerPath, "sourceReferences", index],
+      });
+    }
+  };
+
   if (report.decision.status === "STOP") {
     for (const [index, reason] of report.decision.reasons.entries()) {
       collect(reason.sourceReferences, ["decision", "reasons", index]);
@@ -161,40 +197,61 @@ function collectReferenceOccurrences(
   return occurrences;
 }
 
-function addIssue(
+function validateSelection(
+  input: DecisionInputBase,
   context: z.RefinementCtx,
-  message: string,
-  path: PropertyKey[],
 ): void {
-  context.addIssue({ code: "custom", message, path });
-}
-
-function validateSelection(report: ReportBase, context: z.RefinementCtx): void {
-  const selection = report.selection;
+  const selection = input.selection;
   if (selection.status !== "SELECTED") {
     return;
   }
 
-  if (!report.intent.allowedProtocols.includes(selection.protocolId)) {
+  if (!input.intent.allowedProtocols.includes(selection.protocolId)) {
     addIssue(context, "Selected protocol is not allowed by intent", [
       "selection",
       "protocolId",
     ]);
   }
 
-  const quote = report.quotes.find(
+  const quote = input.quotes.find(
     (candidate) => candidate.quoteId === selection.quoteId,
   );
   if (
     quote?.status !== "SUCCESS" ||
     quote.protocolId !== selection.protocolId ||
-    quote.inputAmount !== report.intent.inputAmount ||
-    !assetsEqual(report.intent.inputAsset, quote.inputAsset) ||
-    !assetsEqual(report.intent.outputAsset, quote.outputAsset)
+    quote.inputAmount !== input.intent.inputAmount ||
+    !assetsEqual(input.intent.inputAsset, quote.inputAsset) ||
+    !assetsEqual(input.intent.outputAsset, quote.outputAsset)
   ) {
     addIssue(context, "Selection must reference a matching successful quote", [
       "selection",
     ]);
+  }
+}
+
+function validateInputInvariants(
+  input: DecisionInputBase,
+  context: z.RefinementCtx,
+): void {
+  const quoteIds = input.quotes.map((quote) => quote.quoteId);
+  if (new Set(quoteIds).size !== quoteIds.length) {
+    addIssue(context, "Quote identifiers must be unique", ["quotes"]);
+  }
+
+  const checkIds = input.alignment.checks.map((check) => check.checkId);
+  if (new Set(checkIds).size !== checkIds.length) {
+    addIssue(context, "Alignment check identifiers must be unique", [
+      "alignment",
+      "checks",
+    ]);
+  }
+
+  validateSelection(input, context);
+  for (const issue of validateContextualSourceReferences(
+    input,
+    collectInputReferenceOccurrences(input),
+  )) {
+    addIssue(context, issue.message, issue.path);
   }
 }
 
@@ -321,73 +378,101 @@ function validateManualReview(
   }
 }
 
-interface StopTrigger {
-  description: string;
-  matches: (targetPath: readonly string[]) => boolean;
+const STOP_REASON_RANK: Readonly<Record<StopReasonCodeV0_1, number>> = {
+  NO_VALID_SELECTION: 10,
+  CAPABILITY_FAILED: 20,
+  CAPABILITY_MISSING: 21,
+  CAPABILITY_UNPROVABLE: 22,
+  SIMULATION_ACQUISITION_FAILED: 30,
+  SIMULATION_MISSING: 31,
+  SIMULATION_UNPROVABLE: 32,
+  SIMULATION_EXECUTION_FAILED: 40,
+  SIMULATION_INTERRUPTED: 41,
+  WARNING_PRESENT: 50,
+  RECEIPT_FAILED: 60,
+  RECEIPT_SET_INCOMPLETE: 61,
+  OUTCOME_FAILED: 70,
+  OUTCOME_SET_INCOMPLETE: 71,
+  COVERAGE_INCOMPLETE: 80,
+  ORDERING_INVALID: 90,
+  STATE_CONTINUITY_INTERRUPTED: 100,
+  CRITICAL_ALIGNMENT_FAIL: 110,
+  CRITICAL_ALIGNMENT_REVIEW: 111,
+  REQUIRED_EVIDENCE_FAILED: 120,
+  REQUIRED_EVIDENCE_MISSING: 121,
+  REQUIRED_EVIDENCE_UNPROVABLE: 122,
+};
+
+const CAPABILITY_CODE_BY_AVAILABILITY: Readonly<
+  Record<"FAILED" | "MISSING" | "UNPROVABLE", StopReasonCodeV0_1>
+> = {
+  FAILED: "CAPABILITY_FAILED",
+  MISSING: "CAPABILITY_MISSING",
+  UNPROVABLE: "CAPABILITY_UNPROVABLE",
+};
+const SIMULATION_CODE_BY_AVAILABILITY: Readonly<
+  Record<"FAILED" | "MISSING" | "UNPROVABLE", StopReasonCodeV0_1>
+> = {
+  FAILED: "SIMULATION_ACQUISITION_FAILED",
+  MISSING: "SIMULATION_MISSING",
+  UNPROVABLE: "SIMULATION_UNPROVABLE",
+};
+const REQUIRED_EVIDENCE_CODE_BY_AVAILABILITY: Readonly<
+  Record<"FAILED" | "MISSING" | "UNPROVABLE", StopReasonCodeV0_1>
+> = {
+  FAILED: "REQUIRED_EVIDENCE_FAILED",
+  MISSING: "REQUIRED_EVIDENCE_MISSING",
+  UNPROVABLE: "REQUIRED_EVIDENCE_UNPROVABLE",
+};
+
+type StopExpectations = Map<StopReasonCodeV0_1, Set<string>>;
+
+function addStopExpectation(
+  expectations: StopExpectations,
+  code: StopReasonCodeV0_1,
+  references: readonly string[],
+): void {
+  const existing = expectations.get(code) ?? new Set<string>();
+  for (const reference of references) {
+    existing.add(reference);
+  }
+  expectations.set(code, existing);
 }
 
-function pathIsAtOrBelow(
-  targetPath: readonly string[],
-  sourcePath: readonly string[],
-): boolean {
-  return (
-    sourcePath.length <= targetPath.length &&
-    sourcePath.every((segment, index) => targetPath[index] === segment)
-  );
-}
-
-function pathEquals(
-  left: readonly string[],
-  right: readonly string[],
-): boolean {
-  return (
-    left.length === right.length &&
-    left.every((segment, index) => right[index] === segment)
-  );
-}
-
-function sourceRecordTrigger(
-  description: string,
-  sourcePath: readonly string[],
-): StopTrigger {
-  return {
-    description,
-    matches: (targetPath) => pathIsAtOrBelow(targetPath, sourcePath),
-  };
-}
-
-function collectStopTriggers(report: ReportBase): StopTrigger[] {
-  const triggers: StopTrigger[] = [];
+function collectStopExpectations(report: ReportBase): StopExpectations {
+  const expectations: StopExpectations = new Map();
 
   if (report.selection.status === "NOT_SELECTED") {
-    triggers.push(
-      sourceRecordTrigger("the no-selection record", ["selection"]),
-    );
+    addStopExpectation(expectations, "NO_VALID_SELECTION", [
+      "/selection/status",
+    ]);
   }
+
   if (report.capability.availability !== "AVAILABLE") {
-    triggers.push(
-      sourceRecordTrigger("the unavailable Capability evidence", [
-        "capability",
-      ]),
+    addStopExpectation(
+      expectations,
+      CAPABILITY_CODE_BY_AVAILABILITY[report.capability.availability],
+      ["/capability/availability"],
     );
   }
 
   if (report.simulation.availability !== "AVAILABLE") {
-    triggers.push(
-      sourceRecordTrigger("the unavailable simulation evidence", [
-        "simulation",
-      ]),
+    addStopExpectation(
+      expectations,
+      SIMULATION_CODE_BY_AVAILABILITY[report.simulation.availability],
+      ["/simulation/availability"],
     );
   } else {
     const simulation = report.simulation;
-    if (simulation.executionStatus !== "SUCCESS") {
-      triggers.push({
-        description: "the non-successful simulation execution",
-        matches: (targetPath) =>
-          pathEquals(targetPath, ["simulation"]) ||
-          pathIsAtOrBelow(targetPath, ["simulation", "executionStatus"]) ||
-          pathIsAtOrBelow(targetPath, ["simulation", "raw"]),
-      });
+    if (simulation.executionStatus === "FAILED") {
+      addStopExpectation(expectations, "SIMULATION_EXECUTION_FAILED", [
+        "/simulation/executionStatus",
+      ]);
+    }
+    if (simulation.executionStatus === "INTERRUPTED") {
+      addStopExpectation(expectations, "SIMULATION_INTERRUPTED", [
+        "/simulation/executionStatus",
+      ]);
     }
 
     const components = {
@@ -398,122 +483,94 @@ function collectStopTriggers(report: ReportBase): StopTrigger[] {
       ordering: simulation.ordering,
       stateContinuity: simulation.stateContinuity,
     };
-    for (const [name, value] of Object.entries(components)) {
-      if (value.availability !== "AVAILABLE") {
-        triggers.push(
-          sourceRecordTrigger(`the unavailable ${name} evidence`, [
-            "simulation",
-            name,
-          ]),
+    for (const [name, evidence] of Object.entries(components)) {
+      if (evidence.availability !== "AVAILABLE") {
+        addStopExpectation(
+          expectations,
+          REQUIRED_EVIDENCE_CODE_BY_AVAILABILITY[evidence.availability],
+          [`/simulation/${name}/availability`],
         );
       }
     }
 
     if (simulation.warnings.availability === "AVAILABLE") {
-      for (const [index] of simulation.warnings.items.entries()) {
-        triggers.push(
-          sourceRecordTrigger("an original Warning record", [
-            "simulation",
-            "warnings",
-            "items",
-            String(index),
-          ]),
-        );
+      const references = simulation.warnings.items.map(
+        (_warning, index) => `/simulation/warnings/items/${index}`,
+      );
+      if (references.length > 0) {
+        addStopExpectation(expectations, "WARNING_PRESENT", references);
       }
     }
     if (simulation.receipts.availability === "AVAILABLE") {
       if (simulation.receipts.items.length === 0) {
-        triggers.push(
-          sourceRecordTrigger("the empty Receipt collection", [
-            "simulation",
-            "receipts",
-          ]),
-        );
+        addStopExpectation(expectations, "RECEIPT_SET_INCOMPLETE", [
+          "/simulation/receipts/items",
+        ]);
       }
-      for (const [index, receipt] of simulation.receipts.items.entries()) {
-        if (receipt.status === "FAILED") {
-          triggers.push(
-            sourceRecordTrigger("the failed Receipt record", [
-              "simulation",
-              "receipts",
-              "items",
-              String(index),
-            ]),
-          );
-        }
+      const references = simulation.receipts.items.flatMap((receipt, index) =>
+        receipt.status === "FAILED"
+          ? [`/simulation/receipts/items/${index}`]
+          : [],
+      );
+      if (references.length > 0) {
+        addStopExpectation(expectations, "RECEIPT_FAILED", references);
       }
     }
     if (simulation.outcomes.availability === "AVAILABLE") {
       if (simulation.outcomes.items.length === 0) {
-        triggers.push(
-          sourceRecordTrigger("the empty Outcome collection", [
-            "simulation",
-            "outcomes",
-          ]),
-        );
+        addStopExpectation(expectations, "OUTCOME_SET_INCOMPLETE", [
+          "/simulation/outcomes/items",
+        ]);
       }
-      for (const [index, outcome] of simulation.outcomes.items.entries()) {
-        if (outcome.status === "FAILED") {
-          triggers.push(
-            sourceRecordTrigger("the failed Outcome record", [
-              "simulation",
-              "outcomes",
-              "items",
-              String(index),
-            ]),
-          );
-        }
+      const references = simulation.outcomes.items.flatMap((outcome, index) =>
+        outcome.status === "FAILED"
+          ? [`/simulation/outcomes/items/${index}`]
+          : [],
+      );
+      if (references.length > 0) {
+        addStopExpectation(expectations, "OUTCOME_FAILED", references);
       }
     }
     if (
       simulation.coverage.availability === "AVAILABLE" &&
       !simulation.coverage.complete
     ) {
-      triggers.push(
-        sourceRecordTrigger("the incomplete coverage record", [
-          "simulation",
-          "coverage",
-        ]),
-      );
+      addStopExpectation(expectations, "COVERAGE_INCOMPLETE", [
+        "/simulation/coverage",
+      ]);
     }
     if (
       simulation.ordering.availability === "AVAILABLE" &&
       !simulation.ordering.valid
     ) {
-      triggers.push(
-        sourceRecordTrigger("the invalid ordering record", [
-          "simulation",
-          "ordering",
-        ]),
-      );
+      addStopExpectation(expectations, "ORDERING_INVALID", [
+        "/simulation/ordering",
+      ]);
     }
     if (
       simulation.stateContinuity.availability === "AVAILABLE" &&
       !simulation.stateContinuity.continuous
     ) {
-      triggers.push(
-        sourceRecordTrigger("the interrupted state-continuity record", [
-          "simulation",
-          "stateContinuity",
-        ]),
-      );
+      addStopExpectation(expectations, "STATE_CONTINUITY_INTERRUPTED", [
+        "/simulation/stateContinuity",
+      ]);
     }
   }
 
   for (const check of report.alignment.checks) {
-    if (check.critical && check.status !== "PASS") {
-      for (const sourceReference of check.sourceReferences) {
-        const sourcePath = decodeJsonPointer(sourceReference);
-        triggers.push({
-          description:
-            "each source record underlying a critical alignment failure",
-          matches: (targetPath) => pathIsAtOrBelow(targetPath, sourcePath),
-        });
-      }
+    if (!check.critical || check.status === "PASS") {
+      continue;
     }
+    addStopExpectation(
+      expectations,
+      check.status === "FAIL"
+        ? "CRITICAL_ALIGNMENT_FAIL"
+        : "CRITICAL_ALIGNMENT_REVIEW",
+      check.sourceReferences,
+    );
   }
 
-  return triggers;
+  return expectations;
 }
 
 function validateStopReasonReferences(
@@ -524,63 +581,93 @@ function validateStopReasonReferences(
     return;
   }
 
-  const triggers = collectStopTriggers(report);
-  const references = report.decision.reasons.flatMap((reason, reasonIndex) =>
-    reason.sourceReferences.map((pointer, referenceIndex) => ({
-      pointer,
-      targetPath: decodeJsonPointer(pointer),
-      path: [
+  const expectations = collectStopExpectations(report);
+  const actual = new Map<StopReasonCodeV0_1, number>();
+  let previousRank = -1;
+
+  for (const [index, reason] of report.decision.reasons.entries()) {
+    const rank = STOP_REASON_RANK[reason.code];
+    if (rank <= previousRank) {
+      addIssue(context, "STOP reasons must use canonical rank order", [
         "decision",
         "reasons",
-        reasonIndex,
-        "sourceReferences",
-        referenceIndex,
-      ],
-    })),
-  );
+        index,
+        "code",
+      ]);
+    }
+    previousRank = rank;
 
-  for (const trigger of triggers) {
-    if (!references.some(({ targetPath }) => trigger.matches(targetPath))) {
-      addIssue(context, `STOP reason must reference ${trigger.description}`, [
+    if (actual.has(reason.code)) {
+      addIssue(context, "A STOP reason code may appear only once", [
+        "decision",
+        "reasons",
+        index,
+        "code",
+      ]);
+      continue;
+    }
+    actual.set(reason.code, index);
+
+    const expectedReferences = expectations.get(reason.code);
+    if (expectedReferences === undefined) {
+      addIssue(context, "STOP reason code has no matching trigger", [
+        "decision",
+        "reasons",
+        index,
+        "code",
+      ]);
+      continue;
+    }
+    for (const [
+      referenceIndex,
+      reference,
+    ] of reason.sourceReferences.entries()) {
+      if (!expectedReferences.has(reference)) {
+        addIssue(
+          context,
+          "STOP source reference is not evidence for its owning reason code",
+          ["decision", "reasons", index, "sourceReferences", referenceIndex],
+        );
+      }
+    }
+    const actualReferences = new Set<string>(reason.sourceReferences);
+    for (const reference of expectedReferences) {
+      if (!actualReferences.has(reference)) {
+        addIssue(context, "STOP reason omits triggering evidence", [
+          "decision",
+          "reasons",
+          index,
+          "sourceReferences",
+        ]);
+      }
+    }
+  }
+
+  for (const code of expectations.keys()) {
+    if (!actual.has(code)) {
+      addIssue(context, "STOP decision omits a triggered reason code", [
         "decision",
         "reasons",
       ]);
-    }
-  }
-  for (const reference of references) {
-    if (!triggers.some((trigger) => trigger.matches(reference.targetPath))) {
-      addIssue(
-        context,
-        "STOP source reference is unrelated to every actual STOP trigger",
-        reference.path,
-      );
     }
   }
 }
 
+export const DecisionInputV0_1Schema = DecisionInputBaseSchema.superRefine(
+  (input, context) => {
+    validateInputInvariants(input, context);
+  },
+);
+
 export const PreflightReportSchema = PreflightReportBaseSchema.superRefine(
   (report, context) => {
-    const quoteIds = report.quotes.map((quote) => quote.quoteId);
-    if (new Set(quoteIds).size !== quoteIds.length) {
-      addIssue(context, "Quote identifiers must be unique", ["quotes"]);
-    }
-
-    const checkIds = report.alignment.checks.map((check) => check.checkId);
-    if (new Set(checkIds).size !== checkIds.length) {
-      addIssue(context, "Alignment check identifiers must be unique", [
-        "alignment",
-        "checks",
-      ]);
-    }
-
-    validateSelection(report, context);
+    validateInputInvariants(report, context);
     validateManualReview(report, context);
     validateStopReasonReferences(report, context);
 
-    const occurrences = collectReferenceOccurrences(report);
     for (const issue of validateContextualSourceReferences(
       report,
-      occurrences,
+      collectReportReferenceOccurrences(report),
     )) {
       addIssue(context, issue.message, issue.path);
     }
@@ -590,5 +677,6 @@ export const PreflightReportSchema = PreflightReportBaseSchema.superRefine(
 export type Intent = z.infer<typeof IntentSchema>;
 export type Alignment = z.infer<typeof AlignmentSchema>;
 export type Provenance = z.infer<typeof ProvenanceSchema>;
+export type DecisionInputV0_1 = z.infer<typeof DecisionInputV0_1Schema>;
 export type PreflightReport = z.infer<typeof PreflightReportSchema>;
 export type PreflightReportInput = z.input<typeof PreflightReportSchema>;
