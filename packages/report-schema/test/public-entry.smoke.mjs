@@ -7,8 +7,20 @@ if (!resolvedEntry.endsWith("/dist/index.js")) {
 
 const packageEntry = await import("@moss-mini-demo/report-schema");
 
-if (typeof packageEntry.PreflightReportSchema?.safeParse !== "function") {
+for (const schemaName of [
+  "PreflightReportSchema",
+  "DecisionInputV0_1Schema",
+  "StopReasonCodeV0_1Schema",
+]) {
+  if (typeof packageEntry[schemaName]?.safeParse !== "function") {
+    throw new Error(
+      `public package entry did not expose ${schemaName} at runtime`,
+    );
+  }
+}
+
+if (!Array.isArray(packageEntry.STOP_REASON_CODES_V0_1)) {
   throw new Error(
-    "public package entry did not expose PreflightReportSchema at runtime",
+    "public package entry did not expose STOP_REASON_CODES_V0_1 at runtime",
   );
 }

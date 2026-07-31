@@ -151,8 +151,20 @@ export function buildStopReport(): PreflightReportInput {
       status: "STOP",
       reasons: [
         {
-          code: "SYNTHETIC_EVIDENCE_INCOMPLETE",
-          sourceReferences: ["/selection", "/capability", "/simulation"],
+          code: "NO_VALID_SELECTION",
+          sourceReferences: ["/selection/status"],
+        },
+        {
+          code: "CAPABILITY_MISSING",
+          sourceReferences: ["/capability/availability"],
+        },
+        {
+          code: "SIMULATION_UNPROVABLE",
+          sourceReferences: ["/simulation/availability"],
+        },
+        {
+          code: "CRITICAL_ALIGNMENT_REVIEW",
+          sourceReferences: ["/capability", "/simulation"],
         },
       ],
     },

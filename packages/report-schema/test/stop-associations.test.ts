@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PreflightReportSchema,
   type PreflightReportInput,
+  type StopReasonCodeV0_1,
 } from "../src/index.js";
 import { buildManualReviewReport, unavailable } from "./synthetic.js";
 
@@ -16,7 +17,8 @@ type ComponentName =
 
 interface StopTriggerCase {
   name: string;
-  validReferences: string[];
+  code: StopReasonCodeV0_1;
+  references: string[];
   unrelatedReference: string;
   mutate: (report: PreflightReportInput) => void;
 }
@@ -47,66 +49,35 @@ function setUnavailableComponent(
   component: ComponentName,
   status: UnavailableStatus,
 ): void {
-  const simulation = availableSimulation(report);
-  (simulation as unknown as Record<ComponentName, unknown>)[component] =
-    unavailable(status, `SYNTHETIC_${component.toUpperCase()}_${status}`, [
-      "/simulation/raw",
-    ]);
+  const simulation = availableSimulation(report) as unknown as Record<
+    ComponentName,
+    unknown
+  >;
+  simulation[component] = unavailable(
+    status,
+    `SYNTHETIC_${component.toUpperCase()}_${status}`,
+    ["/simulation/raw"],
+  );
 }
 
 function buildStopReport(
   testCase: StopTriggerCase,
-  sourceReferences = testCase.validReferences,
+  references = testCase.references,
 ): PreflightReportInput {
   const report = buildManualReviewReport();
   testCase.mutate(report);
   report.decision = {
     status: "STOP",
-    reasons: [
-      {
-        code: "SYNTHETIC_STOP_TRIGGER",
-        sourceReferences,
-      },
-    ],
+    reasons: [{ code: testCase.code, sourceReferences: references }],
   };
   return report;
 }
 
-function firstStopReason(report: PreflightReportInput) {
-  if (report.decision.status !== "STOP") {
-    throw new Error("synthetic report must have a STOP decision");
-  }
-  const reason = report.decision.reasons[0];
-  if (reason === undefined) {
-    throw new Error("synthetic STOP decision must have a reason");
-  }
-  return reason;
-}
-
-function addReferenceCycle(report: PreflightReportInput): void {
-  const quote = report.quotes[0];
-  if (quote === undefined) {
-    throw new Error("synthetic report must contain a quote");
-  }
-  report.quotes.push({
-    quoteId: "synthetic-cyclic-stop-quote",
-    protocolId: quote.protocolId,
-    inputAsset: quote.inputAsset,
-    outputAsset: quote.outputAsset,
-    inputAmount: quote.inputAmount,
-    status: "FAILED",
-    failure: {
-      code: "SYNTHETIC_CYCLIC_STOP_QUOTE_FAILURE",
-      sourceReferences: ["/selection/reason"],
-    },
-  });
-  report.selection.reason.sourceReferences = ["/quotes/1/failure"];
-}
-
 const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   {
-    name: "NOT_SELECTED",
-    validReferences: ["/selection"],
+    name: "no valid selection",
+    code: "NO_VALID_SELECTION",
+    references: ["/selection/status"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       report.selection = {
@@ -121,7 +92,14 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   ...UNAVAILABLE_STATUSES.map(
     (status): StopTriggerCase => ({
       name: `Capability ${status}`,
-      validReferences: ["/capability"],
+      code: (
+        {
+          FAILED: "CAPABILITY_FAILED",
+          MISSING: "CAPABILITY_MISSING",
+          UNPROVABLE: "CAPABILITY_UNPROVABLE",
+        } as const
+      )[status],
+      references: ["/capability/availability"],
       unrelatedReference: "/intent",
       mutate: (report) => {
         report.capability = unavailable(
@@ -135,7 +113,14 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   ...UNAVAILABLE_STATUSES.map(
     (status): StopTriggerCase => ({
       name: `Simulation ${status}`,
-      validReferences: ["/simulation"],
+      code: (
+        {
+          FAILED: "SIMULATION_ACQUISITION_FAILED",
+          MISSING: "SIMULATION_MISSING",
+          UNPROVABLE: "SIMULATION_UNPROVABLE",
+        } as const
+      )[status],
+      references: ["/simulation/availability"],
       unrelatedReference: "/intent",
       mutate: (report) => {
         report.simulation = unavailable(
@@ -146,19 +131,28 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
       },
     }),
   ),
-  ...(["FAILED", "INTERRUPTED"] as const).map(
-    (status): StopTriggerCase => ({
-      name: `executionStatus ${status}`,
-      validReferences: ["/simulation/executionStatus"],
-      unrelatedReference: "/intent",
-      mutate: (report) => {
-        availableSimulation(report).executionStatus = status;
-      },
-    }),
-  ),
+  {
+    name: "failed execution",
+    code: "SIMULATION_EXECUTION_FAILED",
+    references: ["/simulation/executionStatus"],
+    unrelatedReference: "/intent",
+    mutate: (report) => {
+      availableSimulation(report).executionStatus = "FAILED";
+    },
+  },
+  {
+    name: "interrupted execution",
+    code: "SIMULATION_INTERRUPTED",
+    references: ["/simulation/executionStatus"],
+    unrelatedReference: "/intent",
+    mutate: (report) => {
+      availableSimulation(report).executionStatus = "INTERRUPTED";
+    },
+  },
   {
     name: "non-empty Warnings",
-    validReferences: ["/simulation/warnings/items/0"],
+    code: "WARNING_PRESENT",
+    references: ["/simulation/warnings/items/0"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const warnings = availableSimulation(report).warnings;
@@ -170,7 +164,8 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   },
   {
     name: "failed Receipt",
-    validReferences: ["/simulation/receipts/items/0"],
+    code: "RECEIPT_FAILED",
+    references: ["/simulation/receipts/items/0"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const receipts = availableSimulation(report).receipts;
@@ -185,7 +180,8 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   },
   {
     name: "empty Receipt collection",
-    validReferences: ["/simulation/receipts/items"],
+    code: "RECEIPT_SET_INCOMPLETE",
+    references: ["/simulation/receipts/items"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const receipts = availableSimulation(report).receipts;
@@ -197,7 +193,8 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   },
   {
     name: "failed Outcome",
-    validReferences: ["/simulation/outcomes/items/0"],
+    code: "OUTCOME_FAILED",
+    references: ["/simulation/outcomes/items/0"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const outcomes = availableSimulation(report).outcomes;
@@ -212,7 +209,8 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   },
   {
     name: "empty Outcome collection",
-    validReferences: ["/simulation/outcomes/items"],
+    code: "OUTCOME_SET_INCOMPLETE",
+    references: ["/simulation/outcomes/items"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const outcomes = availableSimulation(report).outcomes;
@@ -224,7 +222,8 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   },
   {
     name: "incomplete coverage",
-    validReferences: ["/simulation/coverage"],
+    code: "COVERAGE_INCOMPLETE",
+    references: ["/simulation/coverage"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const coverage = availableSimulation(report).coverage;
@@ -236,7 +235,8 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   },
   {
     name: "invalid ordering",
-    validReferences: ["/simulation/ordering"],
+    code: "ORDERING_INVALID",
+    references: ["/simulation/ordering"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const ordering = availableSimulation(report).ordering;
@@ -248,7 +248,8 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   },
   {
     name: "discontinuous state",
-    validReferences: ["/simulation/stateContinuity"],
+    code: "STATE_CONTINUITY_INTERRUPTED",
+    references: ["/simulation/stateContinuity"],
     unrelatedReference: "/intent",
     mutate: (report) => {
       const continuity = availableSimulation(report).stateContinuity;
@@ -262,7 +263,14 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
     UNAVAILABLE_STATUSES.map(
       (status): StopTriggerCase => ({
         name: `${component} ${status}`,
-        validReferences: [`/simulation/${component}`],
+        code: (
+          {
+            FAILED: "REQUIRED_EVIDENCE_FAILED",
+            MISSING: "REQUIRED_EVIDENCE_MISSING",
+            UNPROVABLE: "REQUIRED_EVIDENCE_UNPROVABLE",
+          } as const
+        )[status],
+        references: [`/simulation/${component}/availability`],
         unrelatedReference: "/intent",
         mutate: (report) => {
           setUnavailableComponent(report, component, status);
@@ -273,7 +281,11 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   ...(["FAIL", "REVIEW"] as const).map(
     (status): StopTriggerCase => ({
       name: `critical Alignment ${status}`,
-      validReferences: ["/intent", "/simulation"],
+      code:
+        status === "FAIL"
+          ? "CRITICAL_ALIGNMENT_FAIL"
+          : "CRITICAL_ALIGNMENT_REVIEW",
+      references: ["/intent", "/simulation"],
       unrelatedReference: "/quotes/0",
       mutate: (report) => {
         const check = report.alignment.checks[0];
@@ -286,82 +298,70 @@ const STOP_TRIGGER_CASES: StopTriggerCase[] = [
   ),
 ];
 
-const FORBIDDEN_CONTEXT_REFERENCES = [
-  ["reference metadata", "/selection/reason/sourceReferences/0"],
-  ["the STOP reason itself", "/decision/reasons/0"],
-  ["the decision root", "/decision"],
-  ["limitations", "/limitations"],
-  ["an Alignment result", "/alignment/checks/0"],
-] as const;
+describe.each(STOP_TRIGGER_CASES)("STOP reason: $name", (testCase) => {
+  it("accepts the exact reason code and triggering references", () => {
+    expect(
+      PreflightReportSchema.safeParse(buildStopReport(testCase)).success,
+    ).toBe(true);
+  });
 
-describe.each(STOP_TRIGGER_CASES)("STOP association: $name", (testCase) => {
-  it("accepts references associated with the actual trigger", () => {
+  it("rejects an empty reference list", () => {
+    expect(
+      PreflightReportSchema.safeParse(buildStopReport(testCase, [])).success,
+    ).toBe(false);
+  });
+
+  it("rejects a reference owned by another reason", () => {
+    expect(
+      PreflightReportSchema.safeParse(
+        buildStopReport(testCase, [
+          ...testCase.references,
+          testCase.unrelatedReference,
+        ]),
+      ).success,
+    ).toBe(false);
+  });
+
+  it("rejects a different fixed reason code", () => {
     const report = buildStopReport(testCase);
-    const parsed = PreflightReportSchema.safeParse(report);
-
-    expect(parsed.success).toBe(true);
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
+    if (report.decision.status !== "STOP") {
+      throw new Error("synthetic report must stop");
     }
-  });
-
-  it("rejects an empty sourceReferences list", () => {
-    const report = buildStopReport(testCase);
-    firstStopReason(report).sourceReferences = [];
-
-    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
-  });
-
-  it("rejects omitted sourceReferences", () => {
-    const report = buildStopReport(testCase);
-    const reason = firstStopReason(report) as unknown as {
-      sourceReferences?: string[];
+    report.decision.reasons[0] = {
+      code: "NO_VALID_SELECTION",
+      sourceReferences: testCase.references,
     };
-    delete reason.sourceReferences;
 
-    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
-  });
-
-  it("rejects a syntax-valid dangling reference", () => {
-    const report = buildStopReport(testCase, ["/quotes/99"]);
-
-    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
-  });
-
-  it("rejects a resolvable but unrelated reference", () => {
-    const report = buildStopReport(testCase, [testCase.unrelatedReference]);
-
-    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
-  });
-
-  it("does not let a correct reference hide an unrelated extra reference", () => {
-    const report = buildStopReport(testCase, [
-      ...testCase.validReferences,
-      testCase.unrelatedReference,
-    ]);
-
-    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
-  });
-
-  it.each(FORBIDDEN_CONTEXT_REFERENCES)(
-    "rejects a reference to %s",
-    (_name, pointer) => {
-      const report = buildStopReport(testCase, [pointer]);
-
-      expect(PreflightReportSchema.safeParse(report).success).toBe(false);
-    },
-  );
-
-  it("rejects a report containing a source-reference cycle", () => {
-    const report = buildStopReport(testCase);
-    addReferenceCycle(report);
-
-    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
+    expect(PreflightReportSchema.safeParse(report).success).toBe(
+      testCase.code === "NO_VALID_SELECTION",
+    );
   });
 });
 
-describe("multiple simultaneous STOP triggers", () => {
-  function buildMultipleTriggerReport(sourceReferences: string[]) {
+describe("STOP reason ownership", () => {
+  it("rejects an arbitrary STOP code", () => {
+    const report = buildManualReviewReport();
+    report.selection = {
+      status: "NOT_SELECTED",
+      reason: {
+        code: "SYNTHETIC_NOT_SELECTED",
+        sourceReferences: ["/quotes/0"],
+      },
+    };
+    report.decision = {
+      status: "STOP",
+      reasons: [
+        {
+          code: "SYNTHETIC_STOP_CODE" as never,
+          sourceReferences: ["/selection/status"],
+        },
+      ],
+    };
+
+    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
+  });
+
+  it("rejects one reason that globally covers different triggers", () => {
     const report = buildManualReviewReport();
     report.capability = unavailable("MISSING", "SYNTHETIC_CAPABILITY_MISSING", [
       "/intent",
@@ -375,37 +375,83 @@ describe("multiple simultaneous STOP triggers", () => {
       status: "STOP",
       reasons: [
         {
-          code: "SYNTHETIC_MULTIPLE_TRIGGERS",
-          sourceReferences,
+          code: "CAPABILITY_MISSING",
+          sourceReferences: [
+            "/capability/availability",
+            "/simulation/availability",
+          ],
         },
       ],
     };
-    return report;
-  }
-
-  it("requires an association for every trigger", () => {
-    const report = buildMultipleTriggerReport(["/capability"]);
 
     expect(PreflightReportSchema.safeParse(report).success).toBe(false);
   });
 
-  it("accepts complete trigger coverage", () => {
-    const report = buildMultipleTriggerReport(["/capability", "/simulation"]);
+  it("accepts separately owned reasons in canonical order", () => {
+    const report = buildManualReviewReport();
+    report.capability = unavailable("MISSING", "SYNTHETIC_CAPABILITY_MISSING", [
+      "/intent",
+    ]);
+    report.simulation = unavailable(
+      "UNPROVABLE",
+      "SYNTHETIC_SIMULATION_UNPROVABLE",
+      ["/capability"],
+    );
+    report.decision = {
+      status: "STOP",
+      reasons: [
+        {
+          code: "CAPABILITY_MISSING",
+          sourceReferences: ["/capability/availability"],
+        },
+        {
+          code: "SIMULATION_UNPROVABLE",
+          sourceReferences: ["/simulation/availability"],
+        },
+      ],
+    };
 
     expect(PreflightReportSchema.safeParse(report).success).toBe(true);
   });
-});
 
-describe("critical Alignment source coverage", () => {
-  const criticalFailure = STOP_TRIGGER_CASES.find(
-    (testCase) => testCase.name === "critical Alignment FAIL",
-  );
-  if (criticalFailure === undefined) {
-    throw new Error("critical Alignment matrix case is missing");
-  }
+  it("rejects valid reasons in non-canonical order", () => {
+    const report = buildManualReviewReport();
+    report.capability = unavailable("MISSING", "SYNTHETIC_CAPABILITY_MISSING", [
+      "/intent",
+    ]);
+    report.simulation = unavailable(
+      "UNPROVABLE",
+      "SYNTHETIC_SIMULATION_UNPROVABLE",
+      ["/capability"],
+    );
+    report.decision = {
+      status: "STOP",
+      reasons: [
+        {
+          code: "SIMULATION_UNPROVABLE",
+          sourceReferences: ["/simulation/availability"],
+        },
+        {
+          code: "CAPABILITY_MISSING",
+          sourceReferences: ["/capability/availability"],
+        },
+      ],
+    };
 
-  it("requires every underlying source reference", () => {
-    const report = buildStopReport(criticalFailure, ["/intent"]);
+    expect(PreflightReportSchema.safeParse(report).success).toBe(false);
+  });
+
+  it("does not infer non-empty partial Receipt completeness", () => {
+    const report = buildManualReviewReport();
+    report.decision = {
+      status: "STOP",
+      reasons: [
+        {
+          code: "RECEIPT_SET_INCOMPLETE",
+          sourceReferences: ["/simulation/receipts/items"],
+        },
+      ],
+    };
 
     expect(PreflightReportSchema.safeParse(report).success).toBe(false);
   });

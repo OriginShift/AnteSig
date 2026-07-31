@@ -23,6 +23,38 @@ export const StructuredReasonSchema = z.strictObject({
 
 export const StructuredFailureSchema = StructuredReasonSchema;
 
+export const STOP_REASON_CODES_V0_1 = [
+  "NO_VALID_SELECTION",
+  "CAPABILITY_FAILED",
+  "CAPABILITY_MISSING",
+  "CAPABILITY_UNPROVABLE",
+  "SIMULATION_ACQUISITION_FAILED",
+  "SIMULATION_MISSING",
+  "SIMULATION_UNPROVABLE",
+  "SIMULATION_EXECUTION_FAILED",
+  "SIMULATION_INTERRUPTED",
+  "WARNING_PRESENT",
+  "RECEIPT_FAILED",
+  "RECEIPT_SET_INCOMPLETE",
+  "OUTCOME_FAILED",
+  "OUTCOME_SET_INCOMPLETE",
+  "COVERAGE_INCOMPLETE",
+  "ORDERING_INVALID",
+  "STATE_CONTINUITY_INTERRUPTED",
+  "CRITICAL_ALIGNMENT_FAIL",
+  "CRITICAL_ALIGNMENT_REVIEW",
+  "REQUIRED_EVIDENCE_FAILED",
+  "REQUIRED_EVIDENCE_MISSING",
+  "REQUIRED_EVIDENCE_UNPROVABLE",
+] as const;
+
+export const StopReasonCodeV0_1Schema = z.enum(STOP_REASON_CODES_V0_1);
+
+export const StopReasonV0_1Schema = z.strictObject({
+  code: StopReasonCodeV0_1Schema,
+  sourceReferences: JsonPointerSyntaxListSchema,
+});
+
 export const UnavailableEvidenceSchema = z.discriminatedUnion("availability", [
   z.strictObject({
     availability: z.literal("FAILED"),
@@ -173,7 +205,7 @@ export const DecisionSchema = z.discriminatedUnion("status", [
   z.strictObject({ status: z.literal("MANUAL_REVIEW") }),
   z.strictObject({
     status: z.literal("STOP"),
-    reasons: z.array(StructuredReasonSchema).min(1),
+    reasons: z.array(StopReasonV0_1Schema).min(1),
   }),
 ]);
 
@@ -192,3 +224,5 @@ export type Simulation = z.infer<typeof SimulationSchema>;
 export type AlignmentCheck = z.infer<typeof AlignmentCheckSchema>;
 export type Decision = z.infer<typeof DecisionSchema>;
 export type Limitation = z.infer<typeof LimitationSchema>;
+export type StopReasonCodeV0_1 = z.infer<typeof StopReasonCodeV0_1Schema>;
+export type StopReasonV0_1 = z.infer<typeof StopReasonV0_1Schema>;
