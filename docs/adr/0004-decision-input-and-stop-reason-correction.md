@@ -1,6 +1,6 @@
 # ADR 0004: DecisionInput and STOP reason correction
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-31
 Decision owner: Maintainer
 
