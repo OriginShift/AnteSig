@@ -63,8 +63,13 @@ This checkout also contains the M1-01 tooling and CI foundation:
 
 It also contains the M1-02 `PreflightReport` v0.1 runtime schema package. The
 package validates the fixed report contract using only synthetic test inputs;
-it is not a Fixture, Decision Engine, report generator, or source of real
-evidence.
+it is not a Fixture, report generator, or source of real evidence.
+
+The repository contains the M1-03 Decision Engine. It is a pure, synchronous,
+deterministic, offline, fail-closed evaluator of strictly validated
+`DecisionInput` data. It returns only structured `MANUAL_REVIEW` or `STOP`
+decisions, performs no I/O, and does not create evidence, calculate Alignment,
+or authorize signing or execution.
 
 The repository also contains one purely synthetic M1-04 `MANUAL_REVIEW`
 development Fixture used only for Schema validation. It is not Moss, Monad,
@@ -79,13 +84,12 @@ not establish any product, chain, evidence, or security capability.
 The current repository has not implemented or verified:
 
 - a runnable demo, frontend, or backend;
-- any STOP Fixture, Decision Engine, report generator, or other business
-  TypeScript implementation;
+- any STOP Fixture, report generator, or other application business logic;
 - Moss discovery, loading, action, Capability construction, or simulation;
 - Monad RPC or local-fork connectivity;
 - Kuru or PancakeSwap quotes;
 - Receipt, Outcome, Warning, gas, coverage, or ordering extraction;
-- intent alignment, decision logic, report generation, or export;
+- intent-alignment calculation, report generation, or export;
 - any real address, private key, API key, signing, transaction, or chain
   integration; or
 - any real receipt, quote, simulation, or other real-chain evidence.
