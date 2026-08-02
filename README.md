@@ -93,6 +93,7 @@ or strengthen evidence semantics.
 - [Project brief](docs/project-brief.md)
 - [Architecture](docs/architecture.md)
 - [Security boundary](docs/security-boundary.md)
+- [STOP presentation requirements](docs/stop-presentation.md)
 - [Real versus mock](docs/real-vs-mock.md)
 - [Governance](docs/governance.md)
 - [Architecture decision records](docs/adr/README.md)
