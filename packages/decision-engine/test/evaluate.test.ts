@@ -264,11 +264,17 @@ describe("canonical STOP output", () => {
   });
 
   it("uses original code units to break equal UTF-8 byte ties", () => {
-    const references = [
-      pointer("/capability/raw/\uD800"),
-      pointer("/capability/raw/\uD801"),
-    ];
-    const evaluateWithReferences = (sourceReferences: typeof references) => {
+    const firstReference = pointer("/capability/raw/\uD800");
+    const secondReference = pointer("/capability/raw/\uD801");
+    const encoder = new TextEncoder();
+
+    expect(firstReference).not.toBe(secondReference);
+    expect([...encoder.encode(firstReference)]).toEqual([
+      ...encoder.encode(secondReference),
+    ]);
+
+    const references = [firstReference, secondReference];
+    const buildInputWithReferences = (sourceReferences: typeof references) => {
       const input = buildManualReviewInput();
       if (input.capability.availability !== "AVAILABLE") {
         throw new Error("synthetic Capability is unavailable");
@@ -280,11 +286,19 @@ describe("canonical STOP output", () => {
       const check = firstAlignment(input);
       check.status = "FAIL";
       check.sourceReferences = sourceReferences;
-      return evaluateDecisionV0_1(input);
+      return input;
     };
 
-    const forward = evaluateWithReferences(references);
-    const reverse = evaluateWithReferences([...references].reverse());
+    const forwardInput = buildInputWithReferences(references);
+    const reverseInput = buildInputWithReferences([...references].reverse());
+    const roundTrippedForwardInput = JSON.parse(JSON.stringify(forwardInput));
+    const roundTrippedReverseInput = JSON.parse(JSON.stringify(reverseInput));
+
+    const forward = evaluateDecisionV0_1(forwardInput);
+    const roundTrippedForward = evaluateDecisionV0_1(roundTrippedForwardInput);
+    const reverse = evaluateDecisionV0_1(reverseInput);
+    const roundTrippedReverse = evaluateDecisionV0_1(roundTrippedReverseInput);
+    const repeated = evaluateDecisionV0_1(forwardInput);
     const expected = {
       status: "STOP",
       reasons: [
@@ -299,9 +313,14 @@ describe("canonical STOP output", () => {
     };
 
     expect(forward).toEqual(expected);
+    expect(roundTrippedForward).toEqual(expected);
     expect(reverse).toEqual(expected);
+    expect(roundTrippedReverse).toEqual(expected);
+    expect(repeated).toEqual(expected);
+    expect(JSON.stringify(roundTrippedForward)).toBe(JSON.stringify(forward));
     expect(JSON.stringify(reverse)).toBe(JSON.stringify(forward));
-    expect(JSON.parse(JSON.stringify(forward))).toEqual(forward);
+    expect(JSON.stringify(roundTrippedReverse)).toBe(JSON.stringify(forward));
+    expect(JSON.stringify(repeated)).toBe(JSON.stringify(forward));
   });
 });
 
