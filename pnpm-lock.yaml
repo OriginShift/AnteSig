@@ -22,6 +22,12 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(vite@8.1.5)
 
+  packages/decision-engine:
+    dependencies:
+      '@moss-mini-demo/report-schema':
+        specifier: workspace:*
+        version: link:../report-schema
+
   packages/report-schema:
     dependencies:
       '@noble/hashes':

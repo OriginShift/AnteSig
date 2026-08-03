@@ -13,18 +13,22 @@ the name of this repository or the application itself.
 
 This checkout contains the **M0 - Repository & Architecture Baseline**, the
 M1-01 engineering foundation, and the M1-02 `PreflightReport` v0.1 runtime
-schema package. It also contains one purely synthetic M1-04 `MANUAL_REVIEW`
-development Fixture. The engineering foundation provides a pnpm workspace,
-Node 22 and pnpm 11 project constraints, strict no-emit TypeScript validation,
-Biome formatting and linting, Vitest test-runner infrastructure, and the
+schema package. It also contains the M1-03 pure, synchronous, offline
+Decision Engine and one purely synthetic M1-04 `MANUAL_REVIEW` development
+Fixture. The engineering foundation provides a pnpm workspace, Node 22 and
+pnpm 11 project constraints, strict no-emit TypeScript validation, Biome
+formatting and linting, Vitest test-runner infrastructure, and the
 `quality-gate` GitHub Actions workflow.
 
 The runtime schema is a validation contract, and the Fixture is only for
-Schema validation. The Fixture is not Moss, Monad, protocol, Quote, Receipt,
-simulation, or chain evidence. `MANUAL_REVIEW` is not a safety conclusion,
-approval, authorization, execution guarantee, or permission to sign. The
-repository has no runnable demo, frontend, backend, Decision Engine, Moss or
-Monad integration, wallet, signing, transaction, or chain integration; it also
+Schema validation. The Decision Engine validates a `DecisionInput` through the
+public Schema boundary and deterministically returns only `MANUAL_REVIEW` or
+fail-closed `STOP`; it does not create or strengthen evidence. The Fixture is
+not Moss, Monad, protocol, Quote, Receipt, simulation, or chain evidence.
+`MANUAL_REVIEW` is not a safety conclusion, approval, authorization, execution
+guarantee, or permission to sign. The repository has no runnable demo,
+frontend, backend, STOP Fixture, intent-alignment evaluator, Moss or Monad
+integration, wallet, signing, transaction, or chain integration; it also
 contains no real address, private key, API key, receipt, quote, simulation, or
 other real-chain evidence.
 
@@ -34,7 +38,7 @@ guarantee.
 
 ## Safety position
 
-The only planned decision results are `MANUAL_REVIEW` and `STOP`.
+The Decision Engine produces only `MANUAL_REVIEW` and `STOP`.
 `MANUAL_REVIEW` means only that no defined stop condition was detected in the
 available evidence and that a person may continue reviewing the operation. It
 does not mean the transaction is safe, guaranteed to execute, or suitable for
@@ -81,6 +85,7 @@ or strengthen evidence semantics.
 |   |-- real-vs-mock.md
 |   `-- security-boundary.md
 |-- packages/
+|   |-- decision-engine/
 |   `-- report-schema/
 |-- CONTRIBUTING.md
 |-- LICENSE
