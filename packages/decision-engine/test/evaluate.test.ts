@@ -262,6 +262,47 @@ describe("canonical STOP output", () => {
       ],
     });
   });
+
+  it("uses original code units to break equal UTF-8 byte ties", () => {
+    const references = [
+      pointer("/capability/raw/\uD800"),
+      pointer("/capability/raw/\uD801"),
+    ];
+    const evaluateWithReferences = (sourceReferences: typeof references) => {
+      const input = buildManualReviewInput();
+      if (input.capability.availability !== "AVAILABLE") {
+        throw new Error("synthetic Capability is unavailable");
+      }
+      const raw = input.capability.raw as Record<string, unknown>;
+      raw["\uD800"] = "synthetic-high-surrogate-0";
+      raw["\uD801"] = "synthetic-high-surrogate-1";
+
+      const check = firstAlignment(input);
+      check.status = "FAIL";
+      check.sourceReferences = sourceReferences;
+      return evaluateDecisionV0_1(input);
+    };
+
+    const forward = evaluateWithReferences(references);
+    const reverse = evaluateWithReferences([...references].reverse());
+    const expected = {
+      status: "STOP",
+      reasons: [
+        {
+          code: "CRITICAL_ALIGNMENT_FAIL",
+          sourceReferences: [
+            "/capability/raw/\uD800",
+            "/capability/raw/\uD801",
+          ],
+        },
+      ],
+    };
+
+    expect(forward).toEqual(expected);
+    expect(reverse).toEqual(expected);
+    expect(JSON.stringify(reverse)).toBe(JSON.stringify(forward));
+    expect(JSON.parse(JSON.stringify(forward))).toEqual(forward);
+  });
 });
 
 describe("purity and determinism", () => {

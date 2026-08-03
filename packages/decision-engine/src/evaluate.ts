@@ -57,6 +57,19 @@ const REQUIRED_EVIDENCE_CODE_BY_AVAILABILITY = {
 
 type StopReasons = Map<StopReasonCodeV0_1, Set<string>>;
 
+function compareCodeUnits(left: string, right: string): number {
+  const sharedLength = Math.min(left.length, right.length);
+
+  for (let index = 0; index < sharedLength; index += 1) {
+    const difference = left.charCodeAt(index) - right.charCodeAt(index);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+
+  return left.length - right.length;
+}
+
 function addReason(
   reasons: StopReasons,
   code: StopReasonCodeV0_1,
@@ -82,7 +95,12 @@ function compareUtf8(left: string, right: string): number {
     }
   }
 
-  return leftBytes.length - rightBytes.length;
+  const byteLengthDifference = leftBytes.length - rightBytes.length;
+  if (byteLengthDifference !== 0) {
+    return byteLengthDifference;
+  }
+
+  return compareCodeUnits(left, right);
 }
 
 function collectReasons(input: DecisionInputV0_1): StopReasons {
