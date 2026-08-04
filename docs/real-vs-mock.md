@@ -68,23 +68,41 @@ it is not a Fixture, report generator, or source of real evidence.
 The repository contains the M1-03 Decision Engine. It is a pure, synchronous,
 deterministic, offline, fail-closed evaluator of strictly validated
 `DecisionInput` data. It returns only structured `MANUAL_REVIEW` or `STOP`
-decisions, performs no I/O, and does not create evidence, calculate Alignment,
-or authorize signing or execution.
+decisions, performs no I/O, and does not create or strengthen evidence,
+calculate Alignment, or authorize signing or execution.
 
-The repository also contains one purely synthetic M1-04 `MANUAL_REVIEW`
-development Fixture used only for Schema validation. It is not Moss, Monad,
-protocol, Quote, Receipt, simulation, or chain evidence. `MANUAL_REVIEW` is not
-a safety conclusion, approval, authorization, execution guarantee, or
-permission to sign.
+The repository also contains three purely synthetic development Fixtures. All
+declare `provenance: FIXTURE`, and every identifier and raw payload is
+synthetic:
 
-This tooling and CI foundation is not a runnable application, protocol
-integration, real or mocked protocol evidence, or a safety guarantee. It does
-not establish any product, chain, evidence, or security capability.
+- `manual-review-success.v0.1.json` is the favorable Schema Fixture and retains
+  `MANUAL_REVIEW`;
+- `token-out-mismatch.v0.1.json` records a synthetic intended-versus-observed
+  tokenOut mismatch, a critical failed Alignment, and the exact
+  `CRITICAL_ALIGNMENT_FAIL` STOP decision; and
+- `amount-in-mismatch.v0.1.json` records a synthetic 1-versus-10 amountIn
+  mismatch. Its synthetic simulation remains `SUCCESS`, but its critical
+  failed Alignment still produces the exact `CRITICAL_ALIGNMENT_FAIL` STOP
+  decision.
+
+The Fixtures validate the public Schema and Decision Engine boundaries. Their
+identifiers, raw payloads, Quotes, Receipts, Outcomes, simulation records,
+source references, Alignments, and Decisions are synthetic. They are not Moss,
+Monad, protocol, wallet, RPC, or chain evidence. `MANUAL_REVIEW` is not a
+safety conclusion, approval, authorization, execution guarantee, or permission
+to sign. `STOP` is a structured fail-closed result, not proof of safety,
+transaction authorization, or real-chain observation.
+
+These engineering, contract, and Fixture artifacts are not a runnable
+application, protocol integration, real or mocked protocol evidence, or a
+safety guarantee. They do not establish any product, chain, evidence, or
+security capability.
 
 The current repository has not implemented or verified:
 
 - a runnable demo, frontend, or backend;
-- any STOP Fixture, report generator, or other application business logic;
+- report generation, orchestration, or application behavior beyond the
+  validated Schema and Decision Engine contracts;
 - Moss discovery, loading, action, Capability construction, or simulation;
 - Monad RPC or local-fork connectivity;
 - Kuru or PancakeSwap quotes;
@@ -95,6 +113,10 @@ The current repository has not implemented or verified:
 - any real receipt, quote, simulation, or other real-chain evidence.
 
 There is no runnable demo.
+
+See [M1 completion evidence and criteria](./m1-completion-evidence.md) for the
+exact-SHA delivery inventory. That inventory supports a later Maintainer
+assessment; it is not proof that M1 is closed.
 
 ## Prohibited claims
 

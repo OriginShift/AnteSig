@@ -11,26 +11,38 @@ the name of this repository or the application itself.
 
 ## Current status
 
-This checkout contains the **M0 - Repository & Architecture Baseline**, the
-M1-01 engineering foundation, and the M1-02 `PreflightReport` v0.1 runtime
-schema package. It also contains the M1-03 pure, synchronous, offline
-Decision Engine and one purely synthetic M1-04 `MANUAL_REVIEW` development
-Fixture. The engineering foundation provides a pnpm workspace, Node 22 and
-pnpm 11 project constraints, strict no-emit TypeScript validation, Biome
-formatting and linting, Vitest test-runner infrastructure, and the
-`quality-gate` GitHub Actions workflow.
+This checkout contains the **M0 - Repository & Architecture Baseline** and the
+M1 engineering and evidence-contract foundation. The foundation provides a
+pnpm workspace with a registered `packages/*` boundary, Node 22 and pnpm 11
+project constraints, strict no-emit TypeScript validation, Biome formatting
+and linting, Vitest, and the `quality-gate` GitHub Actions workflow.
 
-The runtime schema is a validation contract, and the Fixture is only for
-Schema validation. The Decision Engine validates a `DecisionInput` through the
-public Schema boundary and deterministically returns only `MANUAL_REVIEW` or
-fail-closed `STOP`; it does not create or strengthen evidence. The Fixture is
-not Moss, Monad, protocol, Quote, Receipt, simulation, or chain evidence.
-`MANUAL_REVIEW` is not a safety conclusion, approval, authorization, execution
-guarantee, or permission to sign. The repository has no runnable demo,
-frontend, backend, STOP Fixture, intent-alignment evaluator, Moss or Monad
-integration, wallet, signing, transaction, or chain integration; it also
-contains no real address, private key, API key, receipt, quote, simulation, or
-other real-chain evidence.
+The public `@moss-mini-demo/report-schema` package provides the
+`PreflightReport` v0.1 runtime Schema and strict `DecisionInput` boundary. The
+public `@moss-mini-demo/decision-engine` package validates that input and
+deterministically returns only `MANUAL_REVIEW` or fail-closed `STOP`. The
+Engine is pure, synchronous, and offline. It does not create or strengthen
+evidence, calculate Alignment, or authorize signing or execution.
+
+The repository also contains three purely synthetic development Fixtures:
+
+- a favorable `MANUAL_REVIEW` Schema Fixture;
+- a tokenOut mismatch Fixture with a critical failed Alignment and `STOP`; and
+- an amountIn mismatch Fixture whose synthetic simulation remains `SUCCESS`
+  while its critical failed Alignment produces `STOP`.
+
+All three declare `provenance: FIXTURE`. They validate Schema and Decision
+Engine boundaries, not Moss, Monad, protocol, Quote, Receipt, simulation, RPC,
+wallet, or chain evidence. `MANUAL_REVIEW` is not a safety conclusion,
+approval, authorization, execution guarantee, or permission to sign. `STOP`
+is a structured fail-closed result, not proof of safety, transaction
+authorization, or real-chain observation.
+
+The repository still has no runnable demo, frontend, backend, report
+orchestration, intent-alignment evaluator, Moss or Monad integration, RPC or
+protocol integration, wallet, signing, transaction broadcast, or chain
+integration. It contains no real address, private key, API key, Quote,
+Receipt, simulation, or other real-chain evidence.
 
 Do not interpret repository setup, local tooling, CI, or documentation as
 evidence that the target system works, as real-chain evidence, or as a safety
@@ -41,8 +53,9 @@ guarantee.
 The Decision Engine produces only `MANUAL_REVIEW` and `STOP`.
 `MANUAL_REVIEW` means only that no defined stop condition was detected in the
 available evidence and that a person may continue reviewing the operation. It
-does not mean the transaction is safe, guaranteed to execute, or suitable for
-signing.
+is not a safety conclusion, approval, authorization, execution guarantee, or
+permission to sign. `STOP` is a structured fail-closed result and does not
+prove that any other operation is safe or authorize a transaction.
 
 This project does not store or handle private keys, sign transactions, or send
 transactions to Monad mainnet. Natural-language explanations are not on-chain
@@ -81,6 +94,7 @@ or strengthen evidence semantics.
 |   |-- adr/
 |   |-- architecture.md
 |   |-- governance.md
+|   |-- m1-completion-evidence.md
 |   |-- project-brief.md
 |   |-- real-vs-mock.md
 |   `-- security-boundary.md
@@ -100,6 +114,7 @@ or strengthen evidence semantics.
 - [Security boundary](docs/security-boundary.md)
 - [STOP presentation requirements](docs/stop-presentation.md)
 - [Real versus mock](docs/real-vs-mock.md)
+- [M1 completion evidence and criteria](docs/m1-completion-evidence.md)
 - [Governance](docs/governance.md)
 - [Architecture decision records](docs/adr/README.md)
 
