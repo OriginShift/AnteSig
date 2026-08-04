@@ -1,12 +1,21 @@
 # Synthetic Development Fixtures
 
-`manual-review-success.v0.1.json` is a development fixture for validating the
-PreflightReport v0.1 schema. Its provenance is `FIXTURE`; every identifier and
-raw payload in the file is synthetic.
+These files are development fixtures for validating the PreflightReport v0.1
+Schema and Decision Engine boundary. Their provenance is `FIXTURE`; every
+identifier and raw payload is synthetic.
 
-It is not evidence from Moss, Monad, a protocol, wallet, RPC, Quote, Receipt,
-or simulation. `MANUAL_REVIEW` is not a safety conclusion, approval,
-authorization, execution guarantee, or permission to sign.
+- `manual-review-success.v0.1.json` is the favorable Schema fixture. It retains
+  a `MANUAL_REVIEW` Decision and is not a STOP scenario.
+- `token-out-mismatch.v0.1.json` records a synthetic intended-versus-observed
+  tokenOut mismatch. Favorable simulation evidence does not override its
+  critical failed Alignment or exact `CRITICAL_ALIGNMENT_FAIL` STOP Decision.
 
-Do not use this fixture for the #8 STOP case, a Decision Engine, or product
-presentation evidence.
+Neither file is evidence from Moss, Monad, a protocol, wallet, RPC, Quote,
+Receipt, simulation, or chain. `MANUAL_REVIEW` is not a safety conclusion,
+approval, authorization, execution guarantee, or permission to sign. `STOP` is
+a structured fail-closed result, not a safety proof or transaction
+authorization.
+
+Do not use these fixtures as product presentation evidence or as permission to
+sign or submit a transaction. A Fixture or green CI run is not a safety
+guarantee or transaction authorization.

@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "0.1",
+  "reportId": "88888888-8888-4888-8888-888888888888",
+  "generatedAt": "2031-04-05T06:07:08.000Z",
+  "network": "eip155:99999999999999999999999999999999",
+  "provenance": "FIXTURE",
+  "intent": {
+    "account": "0x3333333333333333333333333333333333333333",
+    "inputAsset": {
+      "kind": "NATIVE"
+    },
+    "outputAsset": {
+      "kind": "ERC20",
+      "address": "0x1111111111111111111111111111111111111111"
+    },
+    "inputAmount": "1000000000000000",
+    "maxSlippageBps": 50,
+    "allowedProtocols": ["synthetic-token-out-mismatch-protocol"],
+    "recipient": "0x4444444444444444444444444444444444444444"
+  },
+  "quotes": [
+    {
+      "quoteId": "synthetic-token-out-mismatch-quote-v0-1",
+      "protocolId": "synthetic-token-out-mismatch-protocol",
+      "inputAsset": {
+        "kind": "NATIVE"
+      },
+      "outputAsset": {
+        "kind": "ERC20",
+        "address": "0x1111111111111111111111111111111111111111"
+      },
+      "inputAmount": "1000000000000000",
+      "status": "SUCCESS",
+      "outputAmount": "42000000",
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "quoteEvidence": "not-a-protocol-quote"
+      }
+    }
+  ],
+  "selection": {
+    "status": "SELECTED",
+    "protocolId": "synthetic-token-out-mismatch-protocol",
+    "quoteId": "synthetic-token-out-mismatch-quote-v0-1",
+    "reason": {
+      "code": "SYNTHETIC_SELECTED_SUCCESS_QUOTE",
+      "sourceReferences": ["/quotes/0"]
+    }
+  },
+  "capability": {
+    "availability": "AVAILABLE",
+    "raw": {
+      "origin": "synthetic-development-fixture",
+      "capabilityEvidence": "not-a-moss-capability"
+    }
+  },
+  "simulation": {
+    "availability": "AVAILABLE",
+    "executionStatus": "SUCCESS",
+    "raw": {
+      "origin": "synthetic-development-fixture",
+      "simulationEvidence": "not-a-monad-simulation"
+    },
+    "receipts": {
+      "availability": "AVAILABLE",
+      "items": [
+        {
+          "status": "SUCCESS",
+          "raw": {
+            "origin": "synthetic-development-fixture",
+            "receiptEvidence": "not-a-chain-receipt"
+          }
+        }
+      ]
+    },
+    "outcomes": {
+      "availability": "AVAILABLE",
+      "items": [
+        {
+          "status": "SUCCESS",
+          "raw": {
+            "origin": "synthetic-development-fixture",
+            "outcomeEvidence": "not-a-chain-outcome",
+            "tokenOut": {
+              "kind": "ERC20",
+              "address": "0x2222222222222222222222222222222222222222"
+            }
+          }
+        }
+      ]
+    },
+    "warnings": {
+      "availability": "AVAILABLE",
+      "items": []
+    },
+    "coverage": {
+      "availability": "AVAILABLE",
+      "complete": true,
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "coverageEvidence": "synthetic-complete"
+      }
+    },
+    "ordering": {
+      "availability": "AVAILABLE",
+      "valid": true,
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "orderingEvidence": "synthetic-valid"
+      }
+    },
+    "stateContinuity": {
+      "availability": "AVAILABLE",
+      "continuous": true,
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "stateContinuityEvidence": "synthetic-continuous"
+      }
+    }
+  },
+  "alignment": {
+    "checks": [
+      {
+        "checkId": "synthetic-token-out-alignment",
+        "critical": true,
+        "status": "FAIL",
+        "sourceReferences": [
+          "/intent/outputAsset/address",
+          "/simulation/outcomes/items/0/raw/tokenOut/address"
+        ]
+      }
+    ]
+  },
+  "decision": {
+    "status": "STOP",
+    "reasons": [
+      {
+        "code": "CRITICAL_ALIGNMENT_FAIL",
+        "sourceReferences": [
+          "/intent/outputAsset/address",
+          "/simulation/outcomes/items/0/raw/tokenOut/address"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    {
+      "code": "SYNTHETIC_TOKEN_OUT_MISMATCH_FIXTURE_ONLY",
+      "description": "This synthetic development fixture is only for PreflightReport schema and Decision Engine regression testing. Its favorable synthetic simulation does not override the tokenOut mismatch. It is not Moss, Monad, protocol, wallet, RPC, Quote, Receipt, simulation, or chain evidence. MANUAL_REVIEW is not a safety conclusion, approval, authorization, execution guarantee, or permission to sign. STOP is a structured fail-closed result, not a safety proof or transaction authorization.",
+      "sourceReferences": [
+        "/intent/outputAsset/address",
+        "/simulation/outcomes/items/0/raw/tokenOut/address"
+      ]
+    }
+  ]
+}
