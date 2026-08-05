@@ -93,16 +93,24 @@ safety conclusion, approval, authorization, execution guarantee, or permission
 to sign. `STOP` is a structured fail-closed result, not proof of safety,
 transaction authorization, or real-chain observation.
 
-These engineering, contract, and Fixture artifacts are not a runnable
-application, protocol integration, real or mocked protocol evidence, or a
-safety guarantee. They do not establish any product, chain, evidence, or
-security capability.
+The repository also contains a production-buildable and production-startable
+Next.js Web/API baseline. It provides strict versioned API contracts, fixed
+UTF-8 request and response limits, server-generated correlation identifiers, a
+fixed health response, and an offline Fake service. The Fake maps only the
+three allowlisted scenarios to the existing synthetic Fixtures and preserves
+their `FIXTURE` provenance and Decisions. A valid `LIVE` request returns
+`LIVE_UNAVAILABLE` and never falls back to a Fixture.
+
+These engineering, contract, Fixture, Web/API, Fake, build, health, and CI
+artifacts are not an integrated application, Moss or Monad integration, real
+or mocked protocol evidence, a live backend, or a safety guarantee. They do
+not establish any product, chain, evidence, or security capability.
 
 The current repository has not implemented or verified:
 
-- a runnable demo, frontend, or backend;
+- an integrated runnable demo, product workflow, or live backend;
 - report generation, orchestration, or application behavior beyond the
-  validated Schema and Decision Engine contracts;
+  validated Schema, Decision Engine, and offline Web/API baseline;
 - Moss discovery, loading, action, Capability construction, or simulation;
 - Monad RPC or local-fork connectivity;
 - Kuru or PancakeSwap quotes;
@@ -112,7 +120,8 @@ The current repository has not implemented or verified:
   integration; or
 - any real receipt, quote, simulation, or other real-chain evidence.
 
-There is no runnable demo.
+There is no integrated live demo. The buildable Web/API baseline is a skeleton
+for later scoped integration work, not evidence that such integration exists.
 
 See [M1 completion evidence and criteria](./m1-completion-evidence.md) for the
 exact-SHA delivery inventory. That inventory supports a later Maintainer

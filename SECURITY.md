@@ -2,10 +2,16 @@
 
 ## Current scope
 
-Moss-Mini Demo is not a runnable application. This checkout includes the
-M1-01 tooling and CI foundation, which does not add any wallet, signing,
-mainnet submission, Moss integration, Monad RPC integration, or transaction
-simulation implementation.
+Moss-Mini Demo contains a production-buildable and production-startable
+Next.js Web/API baseline, not an integrated runnable application. Its strict
+API envelope, fixed health response, and offline Fake service operate only on
+allowlisted synthetic Fixtures. Valid `LIVE` requests return
+`LIVE_UNAVAILABLE` and never fall back to Fixture data.
+
+This engineering baseline provides no wallet, signing, mainnet submission,
+real Moss execution, Monad RPC connectivity, protocol call, or transaction
+simulation capability. Its build, health endpoint, Fake service, and green CI
+are not chain evidence or safety guarantees.
 
 The documented security boundary is normative for future work. See
 [docs/security-boundary.md](docs/security-boundary.md).
