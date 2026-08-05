@@ -38,11 +38,20 @@ approval, authorization, execution guarantee, or permission to sign. `STOP`
 is a structured fail-closed result, not proof of safety, transaction
 authorization, or real-chain observation.
 
-The repository still has no runnable demo, frontend, backend, report
-orchestration, intent-alignment evaluator, Moss or Monad integration, RPC or
-protocol integration, wallet, signing, transaction broadcast, or chain
-integration. It contains no real address, private key, API key, Quote,
-Receipt, simulation, or other real-chain evidence.
+The repository now includes a production-buildable and production-startable
+Next.js Web/API baseline. It provides a static placeholder, strict and
+versioned preflight request/response contracts, a bounded server-generated
+run identifier, a fixed health contract, and an offline Fake service for the
+three allowlisted synthetic Fixtures. A valid `LIVE` request returns
+`LIVE_UNAVAILABLE`; it never silently falls back to Fixture data.
+
+This baseline is not an integrated runnable demo or product workflow. It has
+no report orchestration, intent-alignment evaluator, real Moss execution,
+Monad or RPC connectivity, protocol calls, wallet, signing, transaction
+broadcast, or chain integration. It contains no real address, private key,
+API key, Quote, Receipt, simulation, or other real-chain evidence. The Fake
+service and health response are engineering boundaries, not a real backend or
+evidence source.
 
 Do not interpret repository setup, local tooling, CI, or documentation as
 evidence that the target system works, as real-chain evidence, or as a safety
@@ -90,6 +99,8 @@ or strengthen evidence semantics.
 |   |-- CODEOWNERS
 |   |-- ISSUE_TEMPLATE/
 |   `-- pull_request_template.md
+|-- apps/
+|   `-- web/
 |-- docs/
 |   |-- adr/
 |   |-- architecture.md
