@@ -16,13 +16,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          submodules: recursive
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22.23.1
-      - name: Setup pnpm
+      - name: Setup Corepack
+        run: corepack enable
+      - name: Validate pinned Moss dependency
+        working-directory: vendor/moss
         run: |
-          corepack enable
+          corepack pnpm --version
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm build
+          corepack pnpm typecheck
+          corepack pnpm test:offline
+      - name: Deinitialize third-party workspace
+        run: git submodule deinit --force vendor/moss
+      - name: Setup Mini-Demo pnpm
+        run: |
           corepack install --global pnpm@11.16.0
           pnpm --version
       - name: Install dependencies
