@@ -183,10 +183,15 @@ describe("ProductionMossPort", () => {
   it("converts source exceptions without leaking their secret message", async () => {
     const secret = "PRIVATE_KEY=synthetic-secret";
     const { bindings } = trackedBindings();
+    const hostileError = new Proxy(new Error(secret), {
+      getPrototypeOf() {
+        throw new Error(secret);
+      },
+    });
     const port = createProductionMossPort({
       ...bindings,
       quote: async () => {
-        throw new Error(secret);
+        throw hostileError;
       },
     });
 

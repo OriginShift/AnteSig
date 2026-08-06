@@ -22,6 +22,17 @@ type SafeContext = Readonly<{ protocolId?: unknown; method?: unknown }>;
 
 const CHAIN_ID = 143;
 const IDENTIFIER = /^[A-Za-z][A-Za-z0-9-]{0,63}$/;
+const ERROR_CODES = new Set<MossAdapterErrorCode>([
+  "INVALID_INPUT",
+  "CHAIN_ID_MISMATCH",
+  "SOURCE_CONTRACT_VIOLATION",
+  "UNSUPPORTED_PROTOCOL",
+  "UNSUPPORTED_METHOD",
+  "DESCRIBE_FAILED",
+  "QUOTE_FAILED",
+  "ACTION_FAILED",
+  "SIMULATION_FAILED",
+]);
 const DERIVED_SOURCE = Object.freeze({
   layer: "MINI_DEMO_DERIVED",
   ruleVersion: "moss-adapter-boundary-v0.1",
@@ -97,6 +108,32 @@ function sourceError(
   context: SafeContext = {},
 ): MossAdapterError {
   return new MossAdapterError("SOURCE_CONTRACT_VIOLATION", operation, context);
+}
+
+function inspectSource<T>(
+  operation: MossAdapterOperation,
+  context: SafeContext,
+  callback: () => T,
+): T {
+  try {
+    return callback();
+  } catch {
+    throw sourceError(operation, context);
+  }
+}
+
+function sanitizedFailureCode(
+  error: unknown,
+  fallback: MossAdapterErrorCode,
+): MossAdapterErrorCode {
+  try {
+    if (error instanceof MossAdapterError && ERROR_CODES.has(error.code)) {
+      return error.code;
+    }
+  } catch {
+    return fallback;
+  }
+  return fallback;
 }
 
 function assertIdentifier(
@@ -193,26 +230,29 @@ function operationContract(
   operation: MossAdapterOperation,
   source: MossOriginalSource,
 ): RawOperationContract {
-  assertLoadedOperation(loaded, protocolId, method, operation);
-  return Object.freeze({
-    chainId: CHAIN_ID,
-    protocolId,
-    method,
-    buildInfo: MOSS_BUILD_INFO,
-    mossOriginal: Object.freeze({
-      source,
-      protocolId: loaded.protocolId,
-      method: loaded.method,
-      stub: loaded.stub,
-      riskLabels: loaded.riskLabels,
-    }),
-    miniDemoDerived: Object.freeze({
-      source: DERIVED_SOURCE,
+  const context = { protocolId, method };
+  return inspectSource(operation, context, () => {
+    assertLoadedOperation(loaded, protocolId, method, operation);
+    return Object.freeze({
+      chainId: CHAIN_ID,
       protocolId,
       method,
-      operationKind: loaded.operationKind,
-      riskLabels: Object.freeze([...loaded.riskLabels]),
-    }),
+      buildInfo: MOSS_BUILD_INFO,
+      mossOriginal: Object.freeze({
+        source,
+        protocolId: loaded.protocolId,
+        method: loaded.method,
+        stub: loaded.stub,
+        riskLabels: loaded.riskLabels,
+      }),
+      miniDemoDerived: Object.freeze({
+        source: DERIVED_SOURCE,
+        protocolId,
+        method,
+        operationKind: loaded.operationKind,
+        riskLabels: Object.freeze([...loaded.riskLabels]),
+      }),
+    });
   });
 }
 
@@ -240,10 +280,11 @@ async function invoke<T>(
   try {
     return await callback();
   } catch (error) {
-    if (error instanceof MossAdapterError) {
-      throw new MossAdapterError(error.code, operation, context);
-    }
-    throw new MossAdapterError(failureCode, operation, context);
+    throw new MossAdapterError(
+      sanitizedFailureCode(error, failureCode),
+      operation,
+      context,
+    );
   }
 }
 
@@ -274,13 +315,10 @@ function validateBindings(bindings: MossSourceBindings): void {
       throw sourceError("buildInfo");
     }
     buildInfo = bindings.buildInfo();
-  } catch (error) {
-    if (error instanceof MossAdapterError) {
-      throw error;
+    if (!matchesMossBuildInfo(buildInfo)) {
+      throw sourceError("buildInfo");
     }
-    throw sourceError("buildInfo");
-  }
-  if (!matchesMossBuildInfo(buildInfo)) {
+  } catch {
     throw sourceError("buildInfo");
   }
 }
@@ -311,24 +349,26 @@ export function createBoundMossPort(
       const result = await invoke("quote", "QUOTE_FAILED", context, () =>
         bindings.quote(protocolId, input),
       );
-      if (!isPlainRecord(result) || !safelyIsJsonSafe(result.quote)) {
-        throw sourceError("quote", context);
-      }
-      const operation = operationContract(
-        result.operation,
-        protocolId,
-        input.method,
-        "quote",
-        source,
-      );
-      return Object.freeze({
-        operation,
-        mossOriginal: Object.freeze({ source, value: result.quote }),
-        miniDemoDerived: Object.freeze({
-          source: DERIVED_SOURCE,
-          normalizationStatus: "NOT_NORMALIZED",
-          reason: "DEFERRED_TO_M2_05",
-        }),
+      return inspectSource("quote", context, () => {
+        if (!isPlainRecord(result) || !safelyIsJsonSafe(result.quote)) {
+          throw sourceError("quote", context);
+        }
+        const operation = operationContract(
+          result.operation,
+          protocolId,
+          input.method,
+          "quote",
+          source,
+        );
+        return Object.freeze({
+          operation,
+          mossOriginal: Object.freeze({ source, value: result.quote }),
+          miniDemoDerived: Object.freeze({
+            source: DERIVED_SOURCE,
+            normalizationStatus: "NOT_NORMALIZED",
+            reason: "DEFERRED_TO_M2_05",
+          }),
+        });
       });
     },
 
@@ -340,31 +380,37 @@ export function createBoundMossPort(
       const result = await invoke("action", "ACTION_FAILED", context, () =>
         bindings.action(protocolId, input),
       );
-      if (!isPlainRecord(result)) {
-        throw sourceError("action", context);
-      }
-      const operation = operationContract(
-        result.operation,
-        protocolId,
-        input.method,
-        "action",
-        source,
-      );
-      const snapshot = snapshotCapability(result.capability, "action", context);
-      return Object.freeze({
-        operation,
-        mossOriginal: Object.freeze({
+      return inspectSource("action", context, () => {
+        if (!isPlainRecord(result)) {
+          throw sourceError("action", context);
+        }
+        const operation = operationContract(
+          result.operation,
+          protocolId,
+          input.method,
+          "action",
           source,
-          value: result.capability,
-        }),
-        miniDemoDerived: Object.freeze({
-          source: DERIVED_SOURCE,
-          snapshot,
-          integrity: Object.freeze({
-            status: "NOT_EVALUATED",
-            reason: "DEFERRED_TO_M2_06",
+        );
+        const snapshot = snapshotCapability(
+          result.capability,
+          "action",
+          context,
+        );
+        return Object.freeze({
+          operation,
+          mossOriginal: Object.freeze({
+            source,
+            value: result.capability,
           }),
-        }),
+          miniDemoDerived: Object.freeze({
+            source: DERIVED_SOURCE,
+            snapshot,
+            integrity: Object.freeze({
+              status: "NOT_EVALUATED",
+              reason: "DEFERRED_TO_M2_06",
+            }),
+          }),
+        });
       });
     },
 
@@ -379,35 +425,37 @@ export function createBoundMossPort(
         context,
         () => bindings.simulate(capability),
       );
-      if (!isPlainRecord(result)) {
-        throw sourceError("simulate");
-      }
-      assertSourceIdentifier(result.protocolId, "simulate", {});
-      assertSourceIdentifier(result.method, "simulate", {
-        protocolId: result.protocolId,
-      });
-      if (!safelyIsJsonSafe(result.simulation)) {
-        throw sourceError("simulate", {
+      return inspectSource("simulate", context, () => {
+        if (!isPlainRecord(result)) {
+          throw sourceError("simulate");
+        }
+        assertSourceIdentifier(result.protocolId, "simulate", {});
+        assertSourceIdentifier(result.method, "simulate", {
           protocolId: result.protocolId,
-          method: result.method,
         });
-      }
-      return Object.freeze({
-        sourceContext: Object.freeze({
-          chainId: CHAIN_ID,
-          protocolId: result.protocolId,
-          method: result.method,
-          buildInfo: MOSS_BUILD_INFO,
-        }),
-        mossOriginal: Object.freeze({
-          source,
-          value: result.simulation,
-        }),
-        miniDemoDerived: Object.freeze({
-          source: DERIVED_SOURCE,
-          mappingStatus: "NOT_MAPPED",
-          reason: "DEFERRED_TO_M2_07",
-        }),
+        if (!safelyIsJsonSafe(result.simulation)) {
+          throw sourceError("simulate", {
+            protocolId: result.protocolId,
+            method: result.method,
+          });
+        }
+        return Object.freeze({
+          sourceContext: Object.freeze({
+            chainId: CHAIN_ID,
+            protocolId: result.protocolId,
+            method: result.method,
+            buildInfo: MOSS_BUILD_INFO,
+          }),
+          mossOriginal: Object.freeze({
+            source,
+            value: result.simulation,
+          }),
+          miniDemoDerived: Object.freeze({
+            source: DERIVED_SOURCE,
+            mappingStatus: "NOT_MAPPED",
+            reason: "DEFERRED_TO_M2_07",
+          }),
+        });
       });
     },
 
