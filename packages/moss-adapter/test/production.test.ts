@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import {
+  createProductionMossPort,
   MOSS_BUILD_INFO,
   MossAdapterError,
-  createProductionMossPort,
   type MossBuildInfo,
   type MossSourceBindings,
 } from "../src/index.js";
@@ -54,6 +54,33 @@ function trackedBindings() {
     },
   } satisfies MossSourceBindings;
   return { bindings, calls };
+}
+
+async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
+  try {
+    await promise;
+  } catch (error) {
+    return error;
+  }
+  throw new Error("Expected input boundary rejection");
+}
+
+function expectSanitizedInputError(
+  error: unknown,
+  operation: "quote" | "action" | "simulate",
+  secret: string,
+): void {
+  expect(error).toBeInstanceOf(MossAdapterError);
+  expect(error).toMatchObject({ code: "INVALID_INPUT", operation });
+  expect(error).not.toHaveProperty("cause");
+
+  const exposed = `${String(error)}\n${JSON.stringify(error)}`;
+  expect(exposed).not.toContain(secret);
+  expect(exposed).not.toContain("PRIVATE_KEY");
+  expect(exposed).not.toContain("https://");
+  expect(exposed).not.toContain("headers");
+  expect(exposed).not.toContain("account");
+  expect(exposed).not.toContain("params");
 }
 
 describe("ProductionMossPort", () => {
@@ -178,6 +205,169 @@ describe("ProductionMossPort", () => {
       code: "SOURCE_CONTRACT_VIOLATION",
       operation: "describe",
     });
+  });
+
+  it("sanitizes a quote method throwing getter before delegation", async () => {
+    const secret =
+      "PRIVATE_KEY=https://quote-input.invalid headers account params input-secret";
+    const { bindings, calls } = trackedBindings();
+    const input = Object.defineProperty(
+      {
+        account: "synthetic-account",
+        params: { amountIn: "100" },
+      },
+      "method",
+      {
+        enumerable: true,
+        get() {
+          throw new Error(secret);
+        },
+      },
+    );
+    const port = createProductionMossPort(bindings);
+
+    const caught = await captureRejection(
+      port.quote("synthetic-protocol", input as never),
+    );
+
+    expectSanitizedInputError(caught, "quote", secret);
+    expect(calls).toEqual({ describe: 0, quote: 0, action: 0, simulate: 0 });
+  });
+
+  it("sanitizes a quote hostile Proxy before delegation", async () => {
+    const secret =
+      "PRIVATE_KEY=https://quote-proxy.invalid headers account params input-secret";
+    const { bindings, calls } = trackedBindings();
+    const input = new Proxy(
+      {
+        method: "swap",
+        account: "synthetic-account",
+        params: { amountIn: "100", source: secret },
+      },
+      {
+        ownKeys() {
+          throw new Error(secret);
+        },
+      },
+    );
+    const port = createProductionMossPort(bindings);
+
+    const caught = await captureRejection(
+      port.quote("synthetic-protocol", input),
+    );
+
+    expectSanitizedInputError(caught, "quote", secret);
+    expect(calls).toEqual({ describe: 0, quote: 0, action: 0, simulate: 0 });
+  });
+
+  it("sanitizes an action account throwing getter before delegation", async () => {
+    const secret =
+      "PRIVATE_KEY=https://action-input.invalid headers account params input-secret";
+    const { bindings, calls } = trackedBindings();
+    const input = Object.defineProperty(
+      {
+        method: "swap",
+        params: { amountIn: "100" },
+      },
+      "account",
+      {
+        enumerable: true,
+        get() {
+          throw new Error(secret);
+        },
+      },
+    );
+    const port = createProductionMossPort(bindings);
+
+    const caught = await captureRejection(
+      port.action("synthetic-protocol", input as never),
+    );
+
+    expectSanitizedInputError(caught, "action", secret);
+    expect(calls).toEqual({ describe: 0, quote: 0, action: 0, simulate: 0 });
+  });
+
+  it("sanitizes an action revoked Proxy before delegation", async () => {
+    const secret =
+      "PRIVATE_KEY=https://action-proxy.invalid headers account params input-secret";
+    const { bindings, calls } = trackedBindings();
+    const revocable = Proxy.revocable(
+      {
+        method: "swap",
+        account: "synthetic-account",
+        params: { amountIn: "100", source: secret },
+      },
+      {},
+    );
+    revocable.revoke();
+    const port = createProductionMossPort(bindings);
+
+    const caught = await captureRejection(
+      port.action("synthetic-protocol", revocable.proxy),
+    );
+
+    expectSanitizedInputError(caught, "action", secret);
+    expect(calls).toEqual({ describe: 0, quote: 0, action: 0, simulate: 0 });
+  });
+
+  it("sanitizes a simulate revoked Proxy before delegation", async () => {
+    const secret =
+      "PRIVATE_KEY=https://simulate-proxy.invalid headers account params input-secret";
+    const { bindings, calls } = trackedBindings();
+    const revocable = Proxy.revocable(
+      { kind: "capability", children: [], source: secret },
+      {},
+    );
+    revocable.revoke();
+    const port = createProductionMossPort(bindings);
+
+    const caught = await captureRejection(
+      port.simulate(revocable.proxy as never),
+    );
+
+    expectSanitizedInputError(caught, "simulate", secret);
+    expect(calls).toEqual({ describe: 0, quote: 0, action: 0, simulate: 0 });
+  });
+
+  it("reads a valid caller method getter once and delegates an owned snapshot", async () => {
+    const { bindings, calls } = trackedBindings();
+    let methodReads = 0;
+    const quoteBinding = vi.fn(bindings.quote as MossSourceBindings["quote"]);
+    const port = createProductionMossPort({
+      ...bindings,
+      quote: quoteBinding,
+    });
+    const input = Object.defineProperty(
+      {
+        account: "synthetic-account",
+        params: { amountIn: "100" },
+      },
+      "method",
+      {
+        enumerable: true,
+        get() {
+          methodReads += 1;
+          if (methodReads > 1) {
+            throw new Error("method was read more than once");
+          }
+          return "swap";
+        },
+      },
+    );
+
+    await port.quote("synthetic-protocol", input as never);
+
+    const delegatedInput = quoteBinding.mock.calls[0]?.[1];
+    expect(methodReads).toBe(1);
+    expect(quoteBinding).toHaveBeenCalledTimes(1);
+    expect(Object.is(delegatedInput, input)).toBe(false);
+    expect(delegatedInput).toEqual({
+      method: "swap",
+      account: "synthetic-account",
+      params: { amountIn: "100" },
+    });
+    expect(Object.isFrozen(delegatedInput)).toBe(true);
+    expect(calls.quote).toBe(1);
   });
 
   it("converts source exceptions without leaking their secret message", async () => {

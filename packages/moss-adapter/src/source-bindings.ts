@@ -166,26 +166,52 @@ function assertJsonInput(
   }
 }
 
-function assertMethodInput(
+function snapshotMethodInput(
   input: unknown,
   operation: "quote" | "action",
   context: SafeContext,
-): asserts input is QuoteInput | ActionInput {
-  if (!isPlainRecord(input)) {
+): QuoteInput | ActionInput {
+  let snapshot: unknown;
+  try {
+    snapshot = structuredClone(input);
+  } catch {
     throw inputError(operation, context);
   }
-  assertIdentifier(input.method, operation, context);
-  if (
-    typeof input.account !== "string" ||
-    input.account.length === 0 ||
-    input.account.length > 128
-  ) {
-    throw inputError(operation, { ...context, method: input.method });
+
+  if (!isPlainRecord(snapshot)) {
+    throw inputError(operation, context);
   }
-  assertJsonInput(input.params, operation, {
+  const method = snapshot.method;
+  const account = snapshot.account;
+  const params = snapshot.params;
+
+  assertIdentifier(method, operation, context);
+  if (
+    typeof account !== "string" ||
+    account.length === 0 ||
+    account.length > 128
+  ) {
+    throw inputError(operation, { ...context, method });
+  }
+  assertJsonInput(params, operation, {
     ...context,
-    method: input.method,
+    method,
   });
+
+  return deepFreeze({ method, account, params });
+}
+
+function snapshotCapabilityInput(capability: unknown): RawCapability {
+  let snapshot: unknown;
+  try {
+    snapshot = structuredClone(capability);
+  } catch {
+    throw inputError("simulate", {});
+  }
+  if (!isPlainRecord(snapshot) || !safelyIsJsonSafe(snapshot)) {
+    throw inputError("simulate", {});
+  }
+  return deepFreeze(snapshot) as RawCapability;
 }
 
 function assertLoadedOperation(
@@ -344,10 +370,10 @@ export function createBoundMossPort(
     async quote(protocolId: string, input: QuoteInput) {
       const initialContext = { protocolId };
       assertIdentifier(protocolId, "quote", initialContext);
-      assertMethodInput(input, "quote", initialContext);
-      const context = { protocolId, method: input.method };
+      const inputSnapshot = snapshotMethodInput(input, "quote", initialContext);
+      const context = { protocolId, method: inputSnapshot.method };
       const result = await invoke("quote", "QUOTE_FAILED", context, () =>
-        bindings.quote(protocolId, input),
+        bindings.quote(protocolId, inputSnapshot),
       );
       return inspectSource("quote", context, () => {
         if (!isPlainRecord(result) || !safelyIsJsonSafe(result.quote)) {
@@ -356,7 +382,7 @@ export function createBoundMossPort(
         const operation = operationContract(
           result.operation,
           protocolId,
-          input.method,
+          inputSnapshot.method,
           "quote",
           source,
         );
@@ -375,10 +401,14 @@ export function createBoundMossPort(
     async action(protocolId: string, input: ActionInput) {
       const initialContext = { protocolId };
       assertIdentifier(protocolId, "action", initialContext);
-      assertMethodInput(input, "action", initialContext);
-      const context = { protocolId, method: input.method };
+      const inputSnapshot = snapshotMethodInput(
+        input,
+        "action",
+        initialContext,
+      );
+      const context = { protocolId, method: inputSnapshot.method };
       const result = await invoke("action", "ACTION_FAILED", context, () =>
-        bindings.action(protocolId, input),
+        bindings.action(protocolId, inputSnapshot),
       );
       return inspectSource("action", context, () => {
         if (!isPlainRecord(result)) {
@@ -387,7 +417,7 @@ export function createBoundMossPort(
         const operation = operationContract(
           result.operation,
           protocolId,
-          input.method,
+          inputSnapshot.method,
           "action",
           source,
         );
@@ -416,14 +446,12 @@ export function createBoundMossPort(
 
     async simulate(capability: RawCapability) {
       const context: SafeContext = {};
-      if (!isPlainRecord(capability) || !safelyIsJsonSafe(capability)) {
-        throw inputError("simulate", context);
-      }
+      const capabilitySnapshot = snapshotCapabilityInput(capability);
       const result = await invoke(
         "simulate",
         "SIMULATION_FAILED",
         context,
-        () => bindings.simulate(capability),
+        () => bindings.simulate(capabilitySnapshot),
       );
       return inspectSource("simulate", context, () => {
         if (!isPlainRecord(result)) {
