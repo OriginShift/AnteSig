@@ -27,6 +27,7 @@ describe("moss-adapter server-only boundary", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "MOSS_BUILD_INFO",
       "MossAdapterError",
+      "collectAndSelectQuotesV0_1",
       "createFakeMossPort",
       "createProductionMossPort",
     ]);

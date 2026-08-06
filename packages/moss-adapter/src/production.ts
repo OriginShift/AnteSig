@@ -7,6 +7,7 @@ import type {
   MossPort,
   MossSourceBindings,
   QuoteInput,
+  QuoteRequestOptionsV0_1,
   RawCapability,
   RawCapabilityEvidence,
   RawOperationContract,
@@ -25,8 +26,12 @@ class ProductionMossPort implements MossPort {
     return this.#delegate.describe(protocolId, method);
   }
 
-  quote(protocolId: string, input: QuoteInput): Promise<RawQuote> {
-    return this.#delegate.quote(protocolId, input);
+  quote(
+    protocolId: string,
+    input: QuoteInput,
+    options?: QuoteRequestOptionsV0_1,
+  ): Promise<RawQuote> {
+    return this.#delegate.quote(protocolId, input, options);
   }
 
   action(

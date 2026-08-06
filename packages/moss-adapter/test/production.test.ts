@@ -84,6 +84,46 @@ function expectSanitizedInputError(
 }
 
 describe("ProductionMossPort", () => {
+  it("forwards the exact optional quote AbortSignal", async () => {
+    const { bindings } = trackedBindings();
+    const quote = vi.fn(bindings.quote as MossSourceBindings["quote"]);
+    const port = createProductionMossPort({ ...bindings, quote });
+    const controller = new AbortController();
+
+    await port.quote(
+      "synthetic-protocol",
+      { method: "swap", account: "synthetic-account", params: {} },
+      { signal: controller.signal },
+    );
+
+    expect(quote).toHaveBeenCalledOnce();
+    expect(quote.mock.calls[0]?.[2]?.signal).toBe(controller.signal);
+  });
+
+  it("sanitizes hostile quote options before delegation", async () => {
+    const secret =
+      "PRIVATE_KEY=https://quote-options.invalid headers account params";
+    const { bindings, calls } = trackedBindings();
+    const options = Object.defineProperty({}, "signal", {
+      enumerable: true,
+      get() {
+        throw new Error(secret);
+      },
+    });
+    const port = createProductionMossPort(bindings);
+
+    const caught = await captureRejection(
+      port.quote(
+        "synthetic-protocol",
+        { method: "swap", account: "synthetic-account", params: {} },
+        options as never,
+      ),
+    );
+
+    expectSanitizedInputError(caught, "quote", secret);
+    expect(calls.quote).toBe(0);
+  });
+
   it("implements all five methods and delegates each async operation once", async () => {
     const { bindings, calls } = trackedBindings();
     const port = createProductionMossPort(bindings);

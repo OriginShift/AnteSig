@@ -64,6 +64,12 @@ importers:
 
   packages/moss-adapter:
     dependencies:
+      '@moss-mini-demo/report-schema':
+        specifier: workspace:*
+        version: link:../report-schema
+      canonicalize:
+        specifier: 3.0.0
+        version: 3.0.0
       server-only:
         specifier: 0.0.1
         version: 0.0.1
@@ -656,6 +662,11 @@ packages:
 
   caniuse-lite@1.0.30001806:
     resolution: {integrity: sha512-72Cuvd95zbSYPKq6Fhg8eDJRlzgWDf7/mtoZv6Qe/DYNCEBdNxoA3+rZAU2ZhGCpZlns3EssFavaZomckT5Uuw==}
+
+  canonicalize@3.0.0:
+    resolution: {integrity: sha512-yYLfHyDMIXRyRqsKBRLX023riFLpXY2YOfdtqKXZRZy9qsfOJ9U+4F9YZL7MEzL5+ziN2x2nlBvY/Voi3EBljA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
@@ -1373,6 +1384,8 @@ snapshots:
   baseline-browser-mapping@2.11.12: {}
 
   caniuse-lite@1.0.30001806: {}
+
+  canonicalize@3.0.0: {}
 
   chai@6.2.2: {}
 

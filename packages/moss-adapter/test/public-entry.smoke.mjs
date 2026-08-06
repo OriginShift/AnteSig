@@ -16,6 +16,7 @@ const runtimeExports = Object.keys(packageEntry).sort();
 const expectedRuntimeExports = [
   "MOSS_BUILD_INFO",
   "MossAdapterError",
+  "collectAndSelectQuotesV0_1",
   "createFakeMossPort",
   "createProductionMossPort",
 ];
@@ -32,6 +33,7 @@ for (const typeOnlyName of [
   "RawOperationContract",
   "RawCapabilityEvidence",
   "RawSimulationEvidence",
+  "QuoteCollectionResultV0_1",
 ]) {
   assert.equal(typeOnlyName in packageEntry, false);
 }
