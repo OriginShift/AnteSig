@@ -1,3 +1,9 @@
+import type {
+  Asset,
+  EvmAddress,
+  ProtocolId,
+} from "@moss-mini-demo/report-schema";
+
 export type ChainId143 = 143;
 
 export type JsonValue =
@@ -40,6 +46,10 @@ export type QuoteInput = Readonly<{
   params: JsonValue;
 }>;
 
+export type QuoteRequestOptionsV0_1 = Readonly<{
+  signal?: AbortSignal;
+}>;
+
 export type ActionInput = Readonly<{
   method: string;
   account: string;
@@ -61,6 +71,7 @@ export interface MossSourceBindings {
   quote(
     protocolId: string,
     input: QuoteInput,
+    options?: QuoteRequestOptionsV0_1,
   ): Promise<
     Readonly<{
       operation: MossLoadedOperation;
@@ -119,6 +130,211 @@ export type RawQuote = Readonly<{
   }>;
 }>;
 
+export type QuoteAssetV0_1 = Asset;
+
+export type DecimalsRecordV0_1 =
+  | Readonly<{ status: "KNOWN"; value: number }>
+  | Readonly<{ status: "UNKNOWN" }>;
+
+export type AssetCatalogEntryV0_1 = Readonly<{
+  asset: QuoteAssetV0_1;
+  decimals: DecimalsRecordV0_1;
+}>;
+
+export type AssetCatalogV0_1 = Readonly<{
+  schemaVersion: "0.1";
+  catalogId: string;
+  sourceVersion: string;
+  provenance: "SERVER_CONFIGURED" | "SYNTHETIC_TEST";
+  sourceReference: string;
+  chainId: ChainId143;
+  validFrom: string;
+  validUntil: string;
+  entries: readonly AssetCatalogEntryV0_1[];
+}>;
+
+export type AssetCatalogSnapshotV0_1 = Readonly<{
+  schemaVersion: "0.1";
+  catalogId: string;
+  sourceVersion: string;
+  provenance: "SERVER_CONFIGURED" | "SYNTHETIC_TEST";
+  sourceReference: string;
+  chainId: ChainId143;
+  validFrom: string;
+  validUntil: string;
+  entries: readonly AssetCatalogEntryV0_1[];
+  digest: `sha256:${string}`;
+}>;
+
+export type QuoteCollectionRequestV0_1 = Readonly<{
+  chainId: ChainId143;
+  candidateProtocols: readonly ProtocolId[];
+  allowedProtocols: readonly ProtocolId[];
+  quoteInput: Readonly<{
+    method: string;
+    account: EvmAddress;
+    params: Readonly<{
+      inputAsset: QuoteAssetV0_1;
+      outputAsset: QuoteAssetV0_1;
+      amountIn: string;
+      readonly [additionalKey: string]: JsonValue;
+    }>;
+  }>;
+  inputAsset: QuoteAssetV0_1;
+  outputAsset: QuoteAssetV0_1;
+  amountIn: string;
+}>;
+
+export type QuoteRawProjectionV0_1 = Readonly<{
+  chainId: ChainId143;
+  inputAsset: QuoteAssetV0_1;
+  outputAsset: QuoteAssetV0_1;
+  amountIn: string;
+  amountOut: string;
+  observableBlockWindow: Readonly<{
+    fromBlock: string;
+    toBlock: string;
+  }>;
+}>;
+
+export type QuoteTimingV0_1 = Readonly<{
+  observedAt: string;
+  monotonicNs: string;
+  clock: "NODE_PROCESS_HRTIME_V0_1";
+}>;
+
+export type RawQuoteRetentionV0_1 =
+  | Readonly<{
+      status: "SNAPSHOTTED";
+      source: RawQuote;
+      snapshot: RawQuote["mossOriginal"]["value"];
+    }>
+  | Readonly<{
+      status: "UNSNAPSHOTTABLE";
+      source: RawQuote;
+    }>;
+
+export type NormalizedQuoteV0_1 = Readonly<{
+  chainId: ChainId143;
+  protocolId: ProtocolId;
+  method: string;
+  account: EvmAddress;
+  inputAsset: QuoteAssetV0_1;
+  outputAsset: QuoteAssetV0_1;
+  inputAmount: string;
+  outputAmount: string;
+  normalizedAmountOut: string;
+  inputDecimals: number;
+  outputDecimals: number;
+  catalog: Readonly<{
+    catalogId: string;
+    sourceVersion: string;
+    provenance: "SERVER_CONFIGURED" | "SYNTHETIC_TEST";
+    sourceReference: string;
+    digest: `sha256:${string}`;
+  }>;
+  observableBlockWindow: Readonly<{
+    fromBlock: string;
+    toBlock: string;
+  }>;
+  mossSource: Readonly<{
+    provenance: "PINNED_SUBMODULE" | "SYNTHETIC_FAKE";
+    upstreamCommit: string;
+    integrationCommit: string | null;
+    patchsetDigest: string | null;
+  }>;
+}>;
+
+export type QuoteCandidateFailureCodeV0_1 =
+  | "PROTOCOL_NOT_ALLOWED"
+  | "QUOTE_TIMEOUT"
+  | "QUOTE_ACQUISITION_FAILED"
+  | "MALFORMED_QUOTE"
+  | "ASSET_DIRECTION_MISMATCH"
+  | "AMOUNT_BASIS_MISMATCH"
+  | "UNKNOWN_ASSET"
+  | "UNKNOWN_DECIMALS";
+
+type SnapshottedRawQuoteV0_1 = Readonly<{
+  status: "SNAPSHOTTED";
+  source: RawQuote;
+  snapshot: RawQuote["mossOriginal"]["value"];
+}>;
+
+export type QuoteCandidateOutcomeV0_1 =
+  | Readonly<{
+      status: "SKIPPED";
+      protocolId: ProtocolId;
+      terminalTiming: QuoteTimingV0_1;
+      failure: Readonly<{
+        code: "PROTOCOL_NOT_ALLOWED" | "UNKNOWN_ASSET" | "UNKNOWN_DECIMALS";
+      }>;
+    }>
+  | Readonly<{
+      status: "ACQUISITION_FAILED";
+      protocolId: ProtocolId;
+      terminalTiming: QuoteTimingV0_1;
+      failure:
+        | Readonly<{ code: "QUOTE_TIMEOUT" }>
+        | Readonly<{
+            code: "QUOTE_ACQUISITION_FAILED";
+            sourceErrorCode: import("./errors.js").MossAdapterErrorCode | null;
+          }>;
+    }>
+  | Readonly<{
+      status: "INELIGIBLE";
+      protocolId: ProtocolId;
+      acquiredTiming: QuoteTimingV0_1;
+      raw: RawQuoteRetentionV0_1;
+      failure: Readonly<{ code: "MALFORMED_QUOTE" }>;
+    }>
+  | Readonly<{
+      status: "INELIGIBLE";
+      protocolId: ProtocolId;
+      acquiredTiming: QuoteTimingV0_1;
+      raw: SnapshottedRawQuoteV0_1;
+      failure: Readonly<{ code: "ASSET_DIRECTION_MISMATCH" }>;
+    }>
+  | Readonly<{
+      status: "INELIGIBLE";
+      protocolId: ProtocolId;
+      acquiredTiming: QuoteTimingV0_1;
+      raw: SnapshottedRawQuoteV0_1;
+      failure: Readonly<{ code: "AMOUNT_BASIS_MISMATCH" }>;
+    }>
+  | Readonly<{
+      status: "ELIGIBLE";
+      protocolId: ProtocolId;
+      acquiredTiming: QuoteTimingV0_1;
+      raw: SnapshottedRawQuoteV0_1;
+      normalized: NormalizedQuoteV0_1;
+    }>;
+
+export type SelectedQuoteDigestV0_1 = Readonly<{
+  algorithm: "RFC8785-SHA256";
+  value: `sha256:${string}`;
+  payload: Readonly<Record<string, JsonValue>>;
+}>;
+
+export type QuoteCollectionResultV0_1 =
+  | Readonly<{
+      status: "SELECTED";
+      method: "DETERMINISTIC_CANDIDATE_SELECTION_V0_1";
+      catalog: AssetCatalogSnapshotV0_1;
+      outcomes: readonly QuoteCandidateOutcomeV0_1[];
+      selected: Readonly<{
+        protocolId: ProtocolId;
+        digest: SelectedQuoteDigestV0_1;
+      }>;
+    }>
+  | Readonly<{
+      status: "NOT_SELECTED";
+      method: "DETERMINISTIC_CANDIDATE_SELECTION_V0_1";
+      code: "NO_ELIGIBLE_QUOTE";
+      catalog: AssetCatalogSnapshotV0_1;
+      outcomes: readonly QuoteCandidateOutcomeV0_1[];
+    }>;
+
 export type RawCapabilityEvidence = Readonly<{
   operation: RawOperationContract;
   mossOriginal: Readonly<{
@@ -155,7 +371,11 @@ export type RawSimulationEvidence = Readonly<{
 
 export interface MossPort {
   describe(protocolId: string, method: string): Promise<RawOperationContract>;
-  quote(protocolId: string, input: QuoteInput): Promise<RawQuote>;
+  quote(
+    protocolId: string,
+    input: QuoteInput,
+    options?: QuoteRequestOptionsV0_1,
+  ): Promise<RawQuote>;
   action(
     protocolId: string,
     input: ActionInput,

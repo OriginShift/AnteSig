@@ -42,6 +42,22 @@ function syntheticBindings(): MossSourceBindings {
 }
 
 describe("FakeMossPort", () => {
+  it("forwards the exact optional quote AbortSignal", async () => {
+    const bindings = syntheticBindings();
+    const quote = vi.fn(bindings.quote as MossSourceBindings["quote"]);
+    const fake = createFakeMossPort({ ...bindings, quote });
+    const controller = new AbortController();
+
+    await fake.quote(
+      "synthetic-protocol",
+      { method: "swap", account: "synthetic-account", params: {} },
+      { signal: controller.signal },
+    );
+
+    expect(quote).toHaveBeenCalledOnce();
+    expect(quote.mock.calls[0]?.[2]?.signal).toBe(controller.signal);
+  });
+
   it("implements the same five-method shapes with explicit synthetic provenance", async () => {
     const fake = createFakeMossPort(syntheticBindings());
     const production = createProductionMossPort(syntheticBindings());

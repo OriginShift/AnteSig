@@ -13,6 +13,7 @@ import type {
   MossPort,
   MossSourceBindings,
   QuoteInput,
+  QuoteRequestOptionsV0_1,
   RawCapability,
   RawOperationContract,
 } from "./types.js";
@@ -201,6 +202,36 @@ function snapshotMethodInput(
   return deepFreeze({ method, account, params });
 }
 
+function snapshotQuoteOptions(
+  options: QuoteRequestOptionsV0_1 | undefined,
+  context: SafeContext,
+): QuoteRequestOptionsV0_1 | undefined {
+  if (options === undefined) {
+    return undefined;
+  }
+
+  try {
+    if (typeof options !== "object" || options === null) {
+      throw inputError("quote", context);
+    }
+    const prototype = Object.getPrototypeOf(options);
+    if (prototype !== Object.prototype && prototype !== null) {
+      throw inputError("quote", context);
+    }
+    const keys = Reflect.ownKeys(options);
+    if (keys.some((key) => key !== "signal")) {
+      throw inputError("quote", context);
+    }
+    const signal = options.signal;
+    if (signal !== undefined && !(signal instanceof AbortSignal)) {
+      throw inputError("quote", context);
+    }
+    return Object.freeze(signal === undefined ? {} : { signal });
+  } catch {
+    throw inputError("quote", context);
+  }
+}
+
 function snapshotCapabilityInput(capability: unknown): RawCapability {
   let snapshot: unknown;
   try {
@@ -367,13 +398,18 @@ export function createBoundMossPort(
       return operationContract(loaded, protocolId, method, "describe", source);
     },
 
-    async quote(protocolId: string, input: QuoteInput) {
+    async quote(
+      protocolId: string,
+      input: QuoteInput,
+      options?: QuoteRequestOptionsV0_1,
+    ) {
       const initialContext = { protocolId };
       assertIdentifier(protocolId, "quote", initialContext);
       const inputSnapshot = snapshotMethodInput(input, "quote", initialContext);
       const context = { protocolId, method: inputSnapshot.method };
+      const optionsSnapshot = snapshotQuoteOptions(options, context);
       const result = await invoke("quote", "QUOTE_FAILED", context, () =>
-        bindings.quote(protocolId, inputSnapshot),
+        bindings.quote(protocolId, inputSnapshot, optionsSnapshot),
       );
       return inspectSource("quote", context, () => {
         if (!isPlainRecord(result) || !safelyIsJsonSafe(result.quote)) {

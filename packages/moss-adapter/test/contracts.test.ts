@@ -5,8 +5,91 @@ vi.mock("server-only", () => ({}));
 import {
   MOSS_BUILD_INFO,
   createProductionMossPort,
+  type QuoteCandidateOutcomeV0_1,
+  type QuoteCollectionRequestV0_1,
+  type QuoteTimingV0_1,
+  type RawQuote,
   type MossSourceBindings,
 } from "../src/index.js";
+
+type AssertNever<T extends never> = T;
+type AssetMismatch = Extract<
+  QuoteCandidateOutcomeV0_1,
+  { failure: { code: "ASSET_DIRECTION_MISMATCH" } }
+>;
+type AmountMismatch = Extract<
+  QuoteCandidateOutcomeV0_1,
+  { failure: { code: "AMOUNT_BASIS_MISMATCH" } }
+>;
+type _AssetMismatchCannotBeUnsnapshottable = AssertNever<
+  Extract<AssetMismatch, { raw: { status: "UNSNAPSHOTTABLE" } }>
+>;
+type _AmountMismatchCannotBeUnsnapshottable = AssertNever<
+  Extract<AmountMismatch, { raw: { status: "UNSNAPSHOTTABLE" } }>
+>;
+
+const typedProtocolId =
+  "alpha-protocol" as QuoteCollectionRequestV0_1["candidateProtocols"][number];
+const typedTiming = {
+  observedAt: "2026-06-01T00:00:00.000Z",
+  monotonicNs: "1",
+  clock: "NODE_PROCESS_HRTIME_V0_1",
+} as const satisfies QuoteTimingV0_1;
+const typedRaw = {} as RawQuote;
+const typedSnapshottedRaw = {
+  status: "SNAPSHOTTED",
+  source: typedRaw,
+  snapshot: {},
+} as const;
+
+const malformedSnapshotted = {
+  status: "INELIGIBLE",
+  protocolId: typedProtocolId,
+  acquiredTiming: typedTiming,
+  raw: typedSnapshottedRaw,
+  failure: { code: "MALFORMED_QUOTE" },
+} as const satisfies QuoteCandidateOutcomeV0_1;
+const malformedUnsnapshottable = {
+  status: "INELIGIBLE",
+  protocolId: typedProtocolId,
+  acquiredTiming: typedTiming,
+  raw: { status: "UNSNAPSHOTTABLE", source: typedRaw },
+  failure: { code: "MALFORMED_QUOTE" },
+} as const satisfies QuoteCandidateOutcomeV0_1;
+const assetMismatchSnapshotted = {
+  status: "INELIGIBLE",
+  protocolId: typedProtocolId,
+  acquiredTiming: typedTiming,
+  raw: typedSnapshottedRaw,
+  failure: { code: "ASSET_DIRECTION_MISMATCH" },
+} as const satisfies QuoteCandidateOutcomeV0_1;
+const amountMismatchSnapshotted = {
+  status: "INELIGIBLE",
+  protocolId: typedProtocolId,
+  acquiredTiming: typedTiming,
+  raw: typedSnapshottedRaw,
+  failure: { code: "AMOUNT_BASIS_MISMATCH" },
+} as const satisfies QuoteCandidateOutcomeV0_1;
+
+const invalidAssetMismatch = {
+  ...assetMismatchSnapshotted,
+  raw: { status: "UNSNAPSHOTTABLE", source: typedRaw },
+} as const;
+// @ts-expect-error Asset mismatch must retain a snapshotted raw quote.
+const _invalidAssetMismatch: QuoteCandidateOutcomeV0_1 = invalidAssetMismatch;
+const invalidAmountMismatch = {
+  ...amountMismatchSnapshotted,
+  raw: { status: "UNSNAPSHOTTABLE", source: typedRaw },
+} as const;
+// @ts-expect-error Amount mismatch must retain a snapshotted raw quote.
+const _invalidAmountMismatch: QuoteCandidateOutcomeV0_1 = invalidAmountMismatch;
+
+void [
+  malformedSnapshotted,
+  malformedUnsnapshottable,
+  assetMismatchSnapshotted,
+  amountMismatchSnapshotted,
+];
 
 function syntheticBindings() {
   const riskLabels = ["SYNTHETIC_PRICE_MOVEMENT"];
