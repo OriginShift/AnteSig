@@ -10,12 +10,12 @@
   "scripts": {
     "dev": "pnpm --filter @moss-mini-demo/web dev",
     "start": "pnpm --filter @moss-mini-demo/web start",
-    "build": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/web build",
+    "build": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/web build",
     "format:check": "biome check --formatter-enabled=true --linter-enabled=false --assist-enabled=false --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
     "lint": "biome lint --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
-    "typecheck": "pnpm --filter @moss-mini-demo/report-schema build && tsc --noEmit && pnpm --filter @moss-mini-demo/web typecheck",
+    "typecheck": "pnpm --filter @moss-mini-demo/report-schema build && tsc --noEmit && pnpm --filter @moss-mini-demo/moss-adapter typecheck && pnpm --filter @moss-mini-demo/web typecheck",
     "test": "pnpm build && vitest run --passWithNoTests",
-    "test:package-import": "node packages/report-schema/test/public-entry.smoke.mjs && node packages/decision-engine/test/public-entry.smoke.mjs",
+    "test:package-import": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && node packages/report-schema/test/public-entry.smoke.mjs && node packages/decision-engine/test/public-entry.smoke.mjs && node --conditions=react-server packages/moss-adapter/test/public-entry.smoke.mjs",
     "test:web:bundle": "node apps/web/test/browser-bundle-leak.smoke.mjs",
     "test:web:production": "node apps/web/test/production-start.smoke.mjs",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:package-import && pnpm test && pnpm test:web:bundle && pnpm test:web:production"
