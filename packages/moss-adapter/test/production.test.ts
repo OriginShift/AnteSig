@@ -8,6 +8,7 @@ import {
   MossAdapterError,
   type MossBuildInfo,
   type MossSourceBindings,
+  type RawCapability,
 } from "../src/index.js";
 
 function trackedBindings() {
@@ -441,4 +442,93 @@ describe("ProductionMossPort", () => {
     expect(JSON.stringify(caught)).not.toContain(secret);
     expect(caught).not.toHaveProperty("cause");
   });
+
+  it("forwards a registered action return to simulate by exact identity", async () => {
+    const { bindings } = trackedBindings();
+    const capability = { kind: "capability", children: [] };
+    const action = vi.fn(async () => ({
+      ...(await bindings.action()),
+      capability,
+    }));
+    const simulate = vi.fn(bindings.simulate as MossSourceBindings["simulate"]);
+    const port = createProductionMossPort({ ...bindings, action, simulate });
+
+    const evidence = await port.action("synthetic-protocol", {
+      method: "swap",
+      account: "synthetic-account",
+      params: {},
+    });
+    await port.simulate(evidence.mossOriginal.value);
+
+    expect(evidence.mossOriginal.value).toBe(capability);
+    expect(simulate).toHaveBeenCalledOnce();
+    expect(simulate.mock.calls[0]?.[0]).toBe(capability);
+  });
+
+  it.each([
+    [
+      "non-enumerable property",
+      (raw: Record<PropertyKey, unknown>) => {
+        Object.defineProperty(raw, "hidden", {
+          value: "synthetic-hidden",
+          enumerable: false,
+        });
+      },
+    ],
+    [
+      "Symbol key",
+      (raw: Record<PropertyKey, unknown>) => {
+        Object.defineProperty(raw, Symbol("synthetic-hidden"), {
+          value: "synthetic-hidden",
+          enumerable: true,
+        });
+      },
+    ],
+    [
+      "sparse array",
+      (raw: Record<PropertyKey, unknown>) => {
+        raw.children = new Array(1);
+      },
+    ],
+    [
+      "extra array property",
+      (raw: Record<PropertyKey, unknown>) => {
+        const children = raw.children as unknown[] & { extra?: string };
+        children.extra = "synthetic-extra";
+      },
+    ],
+  ] as const)(
+    "rejects registered %s before production simulation delegation",
+    async (_name, mutate) => {
+      const { bindings } = trackedBindings();
+      const capability: RawCapability = { kind: "capability", children: [] };
+      const action = vi.fn(async () => ({
+        ...(await bindings.action()),
+        capability,
+      }));
+      const simulate = vi.fn(
+        bindings.simulate as MossSourceBindings["simulate"],
+      );
+      const port = createProductionMossPort({ ...bindings, action, simulate });
+      const evidence = await port.action("synthetic-protocol", {
+        method: "swap",
+        account: "synthetic-account",
+        params: {},
+      });
+      mutate(
+        evidence.mossOriginal.value as unknown as Record<PropertyKey, unknown>,
+      );
+
+      const caught = await captureRejection(
+        port.simulate(evidence.mossOriginal.value),
+      );
+
+      expect(caught).toMatchObject({
+        code: "INVALID_INPUT",
+        operation: "simulate",
+      });
+      expect(caught).not.toHaveProperty("cause");
+      expect(simulate).not.toHaveBeenCalled();
+    },
+  );
 });

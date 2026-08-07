@@ -335,6 +335,85 @@ export type QuoteCollectionResultV0_1 =
       outcomes: readonly QuoteCandidateOutcomeV0_1[];
     }>;
 
+export type CapabilityConstructionPolicyV0_1 = Readonly<{
+  schemaVersion: "0.1";
+  policyId: string;
+  sourceVersion: string;
+  provenance: "SYNTHETIC_TEST";
+  sourceReference: string;
+  chainId: ChainId143;
+  catalogDigest: `sha256:${string}`;
+  protocolId: ProtocolId;
+  inputAsset: QuoteAssetV0_1;
+  outputAsset: QuoteAssetV0_1;
+  expectedNodeCount: Readonly<{
+    capabilityNodes: number;
+    transactionNodes: number;
+    totalNodes: number;
+  }>;
+  expectedTransactionTargets: readonly Readonly<{
+    address: EvmAddress;
+    role: "PROTOCOL" | "SPENDER" | "TOKEN";
+  }>[];
+}>;
+
+type CapabilityIntegrityVerificationV0_1 =
+  | Readonly<{
+      status: "MATCH";
+      expectedDigest: `sha256:${string}`;
+      actualDigest: `sha256:${string}`;
+    }>
+  | Readonly<{
+      status: "MISMATCH";
+      expectedDigest: `sha256:${string}`;
+      actualDigest: `sha256:${string}`;
+    }>
+  | Readonly<{
+      status: "UNPROVABLE";
+      expectedDigest: `sha256:${string}`;
+      actualDigest: null;
+    }>;
+
+export type CapabilityConstructionResultV0_1 = Readonly<{
+  status: "CONSTRUCTED_SYNTHETIC";
+  operation: RawOperationContract;
+  actionInput: ActionInput;
+  mossOriginal: RawCapabilityEvidence["mossOriginal"];
+  simulatorInput: RawCapability;
+  miniDemoDerived: Readonly<{
+    source: MiniDemoDerivedSource;
+    snapshot: RawCapability;
+    selectedQuoteDigest: SelectedQuoteDigestV0_1;
+    amount: Readonly<{
+      smallestUnit: string;
+      humanDecimal: string;
+      decimals: number;
+      conversion: "VIEM_PARSE_FORMAT_UNITS_V0_1";
+    }>;
+    integrity: Readonly<{
+      algorithm: "RFC8785-SHA256";
+      domain: "moss-mini-demo:capability:v0.1\n";
+      digest: `sha256:${string}`;
+    }>;
+    nodeCount: Readonly<{
+      status: "EXPECTED" | "UNEXPECTED";
+      expected: CapabilityConstructionPolicyV0_1["expectedNodeCount"];
+      actual: Readonly<{
+        capabilityNodes: number;
+        transactionNodes: number;
+        totalNodes: number;
+      }>;
+    }>;
+    transactionTargets: Readonly<{
+      status: "EXPECTED" | "UNEXPECTED";
+      expected: CapabilityConstructionPolicyV0_1["expectedTransactionTargets"];
+      observed: readonly EvmAddress[];
+      unexpected: readonly EvmAddress[];
+    }>;
+  }>;
+  verifyCurrentIntegrity: () => CapabilityIntegrityVerificationV0_1;
+}>;
+
 export type RawCapabilityEvidence = Readonly<{
   operation: RawOperationContract;
   mossOriginal: Readonly<{

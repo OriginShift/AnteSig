@@ -4,6 +4,7 @@ import {
   type MossAdapterErrorCode,
   type MossAdapterOperation,
 } from "./errors.js";
+import { isJsonExactValue } from "./integrity.js";
 import type {
   ActionInput,
   JsonValue,
@@ -318,7 +319,11 @@ function snapshotCapability(
   operation: MossAdapterOperation,
   context: SafeContext,
 ): RawCapability {
-  if (!isPlainRecord(capability) || !safelyIsJsonSafe(capability)) {
+  if (
+    !isPlainRecord(capability) ||
+    !isJsonExactValue(capability) ||
+    Array.isArray(capability)
+  ) {
     throw sourceError(operation, context);
   }
   try {
@@ -386,6 +391,7 @@ export function createBoundMossPort(
 ): MossPort {
   validateBindings(bindings);
   const source = originalSource(provenance);
+  const registeredCapabilities = new WeakSet<object>();
 
   return Object.freeze({
     async describe(protocolId: string, method: string) {
@@ -462,6 +468,7 @@ export function createBoundMossPort(
           "action",
           context,
         );
+        registeredCapabilities.add(result.capability);
         return Object.freeze({
           operation,
           mossOriginal: Object.freeze({
@@ -482,12 +489,24 @@ export function createBoundMossPort(
 
     async simulate(capability: RawCapability) {
       const context: SafeContext = {};
-      const capabilitySnapshot = snapshotCapabilityInput(capability);
+      let capabilityInput: RawCapability;
+      if (
+        typeof capability === "object" &&
+        capability !== null &&
+        registeredCapabilities.has(capability)
+      ) {
+        if (!isJsonExactValue(capability) || Array.isArray(capability)) {
+          throw inputError("simulate", context);
+        }
+        capabilityInput = capability;
+      } else {
+        capabilityInput = snapshotCapabilityInput(capability);
+      }
       const result = await invoke(
         "simulate",
         "SIMULATION_FAILED",
         context,
-        () => bindings.simulate(capabilitySnapshot),
+        () => bindings.simulate(capabilityInput),
       );
       return inspectSource("simulate", context, () => {
         if (!isPlainRecord(result)) {
