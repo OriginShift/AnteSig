@@ -9,12 +9,15 @@ import {
 } from "@moss-mini-demo/report-schema";
 import { smallestUnitToHumanDecimal } from "./amount.js";
 import { assetKey, createAssetCatalogSnapshot } from "./asset-catalog.js";
+import { matchesMossBuildInfo } from "./build-info.js";
 import { MossAdapterError, type MossAdapterErrorCode } from "./errors.js";
 import {
   CAPABILITY_DIGEST_DOMAIN,
   capabilityDigestFromSnapshot,
   currentCapabilityDigest,
   currentCapabilityMatchesSnapshot,
+  isDeeplyFrozenJsonExactValue,
+  isJsonDescriptorClosedGraph,
   isJsonDescriptorClosedInput,
   isJsonExactValue,
   observeCapability,
@@ -169,7 +172,7 @@ function cloneInput(value: unknown): unknown {
 }
 
 function parsePolicy(value: unknown): CapabilityConstructionPolicyV0_1 {
-  if (!isJsonExactValue(value) || !isRecord(value)) {
+  if (!isJsonDescriptorClosedInput(value) || !isRecord(value)) {
     return invalidInput();
   }
   const cloned = cloneInput(value);
@@ -272,12 +275,132 @@ function digestEqual(
   }
 }
 
+function nestedValue(value: unknown, path: readonly string[]): unknown {
+  let current = value;
+  for (const key of path) {
+    if (
+      typeof current !== "object" ||
+      current === null ||
+      (!Array.isArray(current) && !isRecord(current))
+    ) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
+}
+
+function allowMirror(
+  allowedOccurrences: WeakMap<object, number>,
+  left: unknown,
+  right: unknown,
+): boolean {
+  if (left !== right || typeof left !== "object" || left === null) {
+    return true;
+  }
+  if (allowedOccurrences.has(left)) {
+    return false;
+  }
+  allowedOccurrences.set(left, 2);
+  return true;
+}
+
+function selectionAllowedOccurrences(
+  selection: unknown,
+  selectedProtocol: ProtocolId,
+): WeakMap<object, number> | undefined {
+  const allowedOccurrences = new WeakMap<object, number>();
+  const outcomes = nestedValue(selection, ["outcomes"]);
+  const digestPayload = nestedValue(selection, [
+    "selected",
+    "digest",
+    "payload",
+  ]);
+  if (!Array.isArray(outcomes) || !isRecord(digestPayload)) {
+    return undefined;
+  }
+
+  for (const outcome of outcomes) {
+    const quoteSource = nestedValue(outcome, ["raw", "source"]);
+    const sourcePairs = [
+      [
+        nestedValue(quoteSource, ["operation", "buildInfo"]),
+        nestedValue(quoteSource, [
+          "operation",
+          "mossOriginal",
+          "source",
+          "buildInfo",
+        ]),
+      ],
+      [
+        nestedValue(quoteSource, ["operation", "mossOriginal", "stub", "risk"]),
+        nestedValue(quoteSource, ["operation", "mossOriginal", "riskLabels"]),
+      ],
+      [
+        nestedValue(quoteSource, ["operation", "mossOriginal", "source"]),
+        nestedValue(quoteSource, ["mossOriginal", "source"]),
+      ],
+      [
+        nestedValue(quoteSource, ["operation", "miniDemoDerived", "source"]),
+        nestedValue(quoteSource, ["miniDemoDerived", "source"]),
+      ],
+    ] as const;
+    if (
+      !sourcePairs.every(([left, right]) =>
+        allowMirror(allowedOccurrences, left, right),
+      )
+    ) {
+      return undefined;
+    }
+
+    if (
+      isRecord(outcome) &&
+      outcome.status === "ELIGIBLE" &&
+      outcome.protocolId === selectedProtocol
+    ) {
+      const selectedPairs = [
+        [
+          nestedValue(outcome, ["normalized", "inputAsset"]),
+          digestPayload.inputAsset,
+        ],
+        [
+          nestedValue(outcome, ["normalized", "outputAsset"]),
+          digestPayload.outputAsset,
+        ],
+        [
+          nestedValue(outcome, ["normalized", "catalog"]),
+          digestPayload.catalog,
+        ],
+        [
+          nestedValue(outcome, ["normalized", "observableBlockWindow"]),
+          digestPayload.observableBlockWindow,
+        ],
+        [
+          nestedValue(outcome, ["normalized", "mossSource"]),
+          digestPayload.mossSource,
+        ],
+        [nestedValue(outcome, ["raw", "snapshot"]), digestPayload.rawQuote],
+      ] as const;
+      if (
+        !selectedPairs.every(([left, right]) =>
+          allowMirror(allowedOccurrences, left, right),
+        )
+      ) {
+        return undefined;
+      }
+    }
+  }
+
+  return allowedOccurrences;
+}
+
 function parseSelection(value: unknown): Readonly<{
   selection: SelectedResult;
   outcome: EligibleOutcome;
   digest: SelectedQuoteDigestV0_1;
+  allowedOccurrences: WeakMap<object, number>;
 }> {
-  if (!isJsonDescriptorClosedInput(value)) {
+  if (!isJsonDescriptorClosedGraph(value)) {
     return invalidInput();
   }
   const cloned = cloneInput(value);
@@ -318,7 +441,22 @@ function parseSelection(value: unknown): Readonly<{
   ) {
     return invalidInput();
   }
-  const rebuiltCatalog = createAssetCatalogSnapshot(catalogValue as never);
+  let rebuiltCatalog: SelectedResult["catalog"];
+  try {
+    if (typeof cloned.catalog.validFrom !== "string") {
+      return invalidInput();
+    }
+    const validationTime = new Date(cloned.catalog.validFrom).valueOf();
+    if (!Number.isFinite(validationTime)) {
+      return invalidInput();
+    }
+    rebuiltCatalog = createAssetCatalogSnapshot(
+      catalogValue as never,
+      validationTime,
+    );
+  } catch {
+    return invalidInput();
+  }
   if (
     rebuiltCatalog.digest !== catalogDigest ||
     canonicalize(rebuiltCatalog) !== canonicalize(cloned.catalog)
@@ -348,12 +486,35 @@ function parseSelection(value: unknown): Readonly<{
   if (!digestEqual(expectedDigest, selectedDigest as SelectedQuoteDigestV0_1)) {
     return invalidInput();
   }
+  const allowedOccurrences = selectionAllowedOccurrences(
+    value,
+    selectedProtocol,
+  );
+  if (allowedOccurrences === undefined) {
+    return invalidInput();
+  }
 
   return Object.freeze({
     selection: cloned as unknown as SelectedResult,
     outcome,
     digest: expectedDigest,
+    allowedOccurrences,
   });
+}
+
+type SelectedMossSource = EligibleOutcome["normalized"]["mossSource"];
+
+function matchesSelectedBuildIdentity(
+  buildInfo: unknown,
+  selectedSource: SelectedMossSource,
+): boolean {
+  return (
+    matchesMossBuildInfo(buildInfo) &&
+    buildInfo.upstreamCommit === selectedSource.upstreamCommit &&
+    (buildInfo.integrationCommit ?? null) ===
+      selectedSource.integrationCommit &&
+    (buildInfo.patchsetDigest ?? null) === selectedSource.patchsetDigest
+  );
 }
 
 function assertAssociation(
@@ -363,6 +524,8 @@ function assertAssociation(
   policy: CapabilityConstructionPolicyV0_1,
 ): void {
   const normalized = outcome.normalized;
+  const quoteSource = outcome.raw.source.mossOriginal.source;
+  const quoteOperationSource = outcome.raw.source.operation.mossOriginal.source;
   if (
     selection.selected.protocolId !== policy.protocolId ||
     selection.catalog.digest !== policy.catalogDigest ||
@@ -377,7 +540,22 @@ function assertAssociation(
     normalized.catalog.provenance !== "SYNTHETIC_TEST" ||
     normalized.catalog.sourceReference !== selection.catalog.sourceReference ||
     normalized.mossSource.provenance !== "SYNTHETIC_FAKE" ||
-    outcome.raw.source.mossOriginal.source.provenance !== "SYNTHETIC_FAKE" ||
+    quoteSource.layer !== "MOSS_ORIGINAL" ||
+    quoteSource.provenance !== normalized.mossSource.provenance ||
+    quoteOperationSource.layer !== "MOSS_ORIGINAL" ||
+    quoteOperationSource.provenance !== normalized.mossSource.provenance ||
+    !matchesSelectedBuildIdentity(
+      outcome.raw.source.operation.buildInfo,
+      normalized.mossSource,
+    ) ||
+    !matchesSelectedBuildIdentity(
+      quoteOperationSource.buildInfo,
+      normalized.mossSource,
+    ) ||
+    !matchesSelectedBuildIdentity(
+      quoteSource.buildInfo,
+      normalized.mossSource,
+    ) ||
     !assetsEqual(normalized.inputAsset, request.inputAsset) ||
     !assetsEqual(normalized.outputAsset, request.outputAsset) ||
     !assetsEqual(policy.inputAsset, request.inputAsset) ||
@@ -440,19 +618,36 @@ function verifyActionEvidence(
   evidence: RawCapabilityEvidence,
   protocolId: ProtocolId,
   method: string,
+  selectedSource: SelectedMossSource,
 ): void {
   try {
+    const operationSource = evidence.operation.mossOriginal.source;
+    const actionSource = evidence.mossOriginal.source;
     if (
       evidence.operation.chainId !== 143 ||
       evidence.operation.protocolId !== protocolId ||
       evidence.operation.method !== method ||
-      evidence.mossOriginal.source.layer !== "MOSS_ORIGINAL" ||
-      evidence.mossOriginal.source.provenance !== "SYNTHETIC_FAKE" ||
+      operationSource.layer !== "MOSS_ORIGINAL" ||
+      operationSource.provenance !== selectedSource.provenance ||
+      actionSource.layer !== "MOSS_ORIGINAL" ||
+      actionSource.provenance !== selectedSource.provenance ||
+      !matchesSelectedBuildIdentity(
+        evidence.operation.buildInfo,
+        selectedSource,
+      ) ||
+      !matchesSelectedBuildIdentity(
+        operationSource.buildInfo,
+        selectedSource,
+      ) ||
+      !matchesSelectedBuildIdentity(actionSource.buildInfo, selectedSource) ||
       evidence.miniDemoDerived.source.layer !== "MINI_DEMO_DERIVED" ||
       evidence.miniDemoDerived.integrity.status !== "NOT_EVALUATED" ||
       evidence.miniDemoDerived.integrity.reason !== "DEFERRED_TO_M2_06" ||
       evidence.mossOriginal.value === evidence.miniDemoDerived.snapshot ||
-      !Object.isFrozen(evidence.miniDemoDerived.snapshot)
+      !isJsonExactValue(evidence.mossOriginal.value) ||
+      Array.isArray(evidence.mossOriginal.value) ||
+      !isDeeplyFrozenJsonExactValue(evidence.miniDemoDerived.snapshot) ||
+      Array.isArray(evidence.miniDemoDerived.snapshot)
     ) {
       sourceViolation();
     }
@@ -468,7 +663,16 @@ export async function constructCapabilityV0_1(
   policyValue: CapabilityConstructionPolicyV0_1,
 ): Promise<CapabilityConstructionResultV0_1> {
   const parsedSelection = parseSelection(selectionValue);
-  if (!isJsonDescriptorClosedInput(requestValue)) {
+  if (
+    !isJsonDescriptorClosedInput(
+      {
+        selection: selectionValue,
+        request: requestValue,
+        policy: policyValue,
+      },
+      parsedSelection.allowedOccurrences,
+    )
+  ) {
     return invalidInput();
   }
   const request = validateQuoteCollectionRequest(requestValue);
@@ -486,7 +690,12 @@ export async function constructCapabilityV0_1(
   );
   const input = actionInput(request, amount.humanDecimal);
   const evidence = await invokeAction(port, policy.protocolId, input);
-  verifyActionEvidence(evidence, policy.protocolId, input.method);
+  verifyActionEvidence(
+    evidence,
+    policy.protocolId,
+    input.method,
+    parsedSelection.outcome.normalized.mossSource,
+  );
 
   const raw = evidence.mossOriginal.value;
   const snapshot = evidence.miniDemoDerived.snapshot;

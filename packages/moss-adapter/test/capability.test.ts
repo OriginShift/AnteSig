@@ -26,6 +26,7 @@ import {
   CAPABILITY_DIGEST_DOMAIN,
   capabilityDigestFromSnapshot,
 } from "../src/integrity.js";
+import { createSelectedQuoteDigest } from "../src/quote.js";
 
 const INPUT_ASSET = AssetSchema.parse({ kind: "NATIVE" });
 const OUTPUT_ASSET = AssetSchema.parse({
@@ -47,6 +48,7 @@ const GOLDEN_DIGEST =
 
 function catalog(
   provenance: AssetCatalogV0_1["provenance"] = "SYNTHETIC_TEST",
+  overrides: Partial<AssetCatalogV0_1> = {},
 ): AssetCatalogV0_1 {
   return {
     schemaVersion: "0.1",
@@ -61,6 +63,7 @@ function catalog(
       { asset: INPUT_ASSET, decimals: { status: "KNOWN", value: 18 } },
       { asset: OUTPUT_ASSET, decimals: { status: "KNOWN", value: 6 } },
     ],
+    ...overrides,
   };
 }
 
@@ -73,14 +76,14 @@ function request(): QuoteCollectionRequestV0_1 {
       method: "swap",
       account: ACCOUNT,
       params: {
-        inputAsset: INPUT_ASSET,
-        outputAsset: OUTPUT_ASSET,
+        inputAsset: structuredClone(INPUT_ASSET),
+        outputAsset: structuredClone(OUTPUT_ASSET),
         amountIn: "1000000000000000000",
         slippageBps: "50",
       },
     },
-    inputAsset: INPUT_ASSET,
-    outputAsset: OUTPUT_ASSET,
+    inputAsset: structuredClone(INPUT_ASSET),
+    outputAsset: structuredClone(OUTPUT_ASSET),
     amountIn: "1000000000000000000",
   };
 }
@@ -188,8 +191,8 @@ function policy(
     chainId: 143,
     catalogDigest: result.catalog.digest,
     protocolId: PROTOCOL,
-    inputAsset: INPUT_ASSET,
-    outputAsset: OUTPUT_ASSET,
+    inputAsset: structuredClone(INPUT_ASSET),
+    outputAsset: structuredClone(OUTPUT_ASSET),
     expectedNodeCount: {
       capabilityNodes: 1,
       transactionNodes: 1,
@@ -200,12 +203,15 @@ function policy(
   };
 }
 
-async function setup(capability = goldenCapability()) {
+async function setup(
+  capability = goldenCapability(),
+  catalogValue: AssetCatalogV0_1 = catalog(),
+) {
   const tracked = trackedBindings(capability);
   const port = createFakeMossPort(tracked.bindings);
   const quoteRequest = request();
   const selection = selected(
-    await collectAndSelectQuotesV0_1(port, catalog(), quoteRequest),
+    await collectAndSelectQuotesV0_1(port, catalogValue, quoteRequest),
   );
   return { ...tracked, port, quoteRequest, selection };
 }
@@ -235,6 +241,56 @@ describe("synthetic Capability construction and integrity", () => {
     expect(capabilityDigestFromSnapshot(goldenCapability())).toBe(
       GOLDEN_DIGEST,
     );
+  });
+
+  it("constructs deterministically across catalog validity clock changes", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-08-07T12:00:00.000Z"));
+      const environment = await setup(
+        goldenCapability(),
+        catalog("SYNTHETIC_TEST", {
+          validFrom: "2026-08-06T00:00:00.000Z",
+          validUntil: "2026-08-08T00:00:00.000Z",
+        }),
+      );
+      const first = await constructCapabilityV0_1(
+        environment.port,
+        environment.selection,
+        environment.quoteRequest,
+        policy(environment.selection),
+      );
+
+      vi.setSystemTime(new Date("2026-08-09T12:00:00.000Z"));
+      const second = await constructCapabilityV0_1(
+        environment.port,
+        environment.selection,
+        environment.quoteRequest,
+        policy(environment.selection),
+      );
+      expect(second.actionInput).toEqual(first.actionInput);
+      expect(second.miniDemoDerived).toEqual(first.miniDemoDerived);
+      expect(environment.calls.action).toBe(2);
+
+      const malformedSelection = structuredClone(environment.selection) as {
+        catalog: { validUntil: string };
+      };
+      malformedSelection.catalog.validUntil = "2026-08-06T00:00:00.000Z";
+      await expect(
+        constructCapabilityV0_1(
+          environment.port,
+          malformedSelection as never,
+          environment.quoteRequest,
+          policy(environment.selection),
+        ),
+      ).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        operation: "action",
+      });
+      expect(environment.calls.action).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("converts amount, preserves exact identity, and matches the frozen digest", async () => {
@@ -323,6 +379,82 @@ describe("synthetic Capability construction and integrity", () => {
     expect(result.miniDemoDerived.snapshot).toBe(acquiredSnapshot);
   });
 
+  it.each([
+    ["upstreamCommit", "f".repeat(40)],
+    ["integrationCommit", "e".repeat(40)],
+    ["patchsetDigest", `sha256:${"0".repeat(64)}`],
+  ] as const)(
+    "rejects action %s build identity mismatch",
+    async (field, replacement) => {
+      const environment = await setup();
+      const action = vi.fn(async (...args: Parameters<MossPort["action"]>) => {
+        const evidence = await environment.port.action(...args);
+        const changedBuildInfo = {
+          ...MOSS_BUILD_INFO,
+          [field]: replacement,
+        } as typeof MOSS_BUILD_INFO;
+        return {
+          ...evidence,
+          mossOriginal: {
+            ...evidence.mossOriginal,
+            source: {
+              ...evidence.mossOriginal.source,
+              buildInfo: changedBuildInfo,
+            },
+          },
+        };
+      });
+      const mismatchedPort = { ...environment.port, action } satisfies MossPort;
+
+      await expect(
+        constructCapabilityV0_1(
+          mismatchedPort,
+          environment.selection,
+          environment.quoteRequest,
+          policy(environment.selection),
+        ),
+      ).rejects.toMatchObject({
+        code: "SOURCE_CONTRACT_VIOLATION",
+        operation: "action",
+      });
+      expect(action).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("rejects a shallow-frozen forged snapshot before returning evidence", async () => {
+    const environment = await setup();
+    const evidence = await environment.port.action(PROTOCOL, {
+      method: "swap",
+      account: ACCOUNT,
+      params: {},
+    });
+    const shallowSnapshot = structuredClone(evidence.miniDemoDerived.snapshot);
+    Object.freeze(shallowSnapshot);
+    expect(Object.isFrozen(shallowSnapshot)).toBe(true);
+    expect(Object.isFrozen(shallowSnapshot.params)).toBe(false);
+    const action = vi.fn(async () => ({
+      ...evidence,
+      miniDemoDerived: {
+        ...evidence.miniDemoDerived,
+        snapshot: shallowSnapshot,
+      },
+    }));
+    const forgedPort = { ...environment.port, action } satisfies MossPort;
+
+    await expect(
+      constructCapabilityV0_1(
+        forgedPort,
+        environment.selection,
+        environment.quoteRequest,
+        policy(environment.selection),
+      ),
+    ).rejects.toMatchObject({
+      code: "SOURCE_CONTRACT_VIOLATION",
+      operation: "action",
+    });
+    expect(action).toHaveBeenCalledOnce();
+  });
+
   it("forwards the registered action return by exact identity without mapping simulation", async () => {
     const { port, result, capability, calls, delegatedSimulationInputs } =
       await construct();
@@ -357,6 +489,77 @@ describe("synthetic Capability construction and integrity", () => {
     });
     expect(result.miniDemoDerived.snapshot).toEqual(snapshotBefore);
     expect(result.miniDemoDerived.integrity.digest).toBe(GOLDEN_DIGEST);
+  });
+
+  it("rejects a caller-controlled repeated alias inside selection", async () => {
+    const environment = await setup();
+    const changed = structuredClone(environment.selection) as unknown as {
+      outcomes: Array<{
+        status: string;
+        protocolId: string;
+        raw?: { snapshot: Record<string, unknown> };
+      }>;
+      selected: { digest: unknown };
+    };
+    const eligible = changed.outcomes.find(
+      (outcome) =>
+        outcome.status === "ELIGIBLE" && outcome.protocolId === PROTOCOL,
+    );
+    if (eligible?.raw === undefined) {
+      throw new Error("Expected eligible synthetic outcome");
+    }
+    const shared = { marker: "caller-alias" };
+    eligible.raw.snapshot.left = shared;
+    eligible.raw.snapshot.right = shared;
+    changed.selected.digest = createSelectedQuoteDigest(eligible as never);
+
+    await expect(
+      constructCapabilityV0_1(
+        environment.port,
+        changed as never,
+        environment.quoteRequest,
+        policy(environment.selection),
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT", operation: "action" });
+    expect(environment.calls.action).toBe(0);
+  });
+
+  it("rejects a caller-controlled repeated alias inside the request", async () => {
+    const environment = await setup();
+    const changed = structuredClone(environment.quoteRequest) as {
+      quoteInput: { params: Record<string, unknown> };
+    };
+    const shared = { marker: "caller-alias" };
+    changed.quoteInput.params.left = shared;
+    changed.quoteInput.params.right = shared;
+
+    await expect(
+      constructCapabilityV0_1(
+        environment.port,
+        environment.selection,
+        changed as never,
+        policy(environment.selection),
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT", operation: "action" });
+    expect(environment.calls.action).toBe(0);
+  });
+
+  it("rejects a policy alias crossing the untrusted argument boundary", async () => {
+    const environment = await setup();
+    const changed = policy(environment.selection) as unknown as {
+      inputAsset: typeof environment.quoteRequest.inputAsset;
+    };
+    changed.inputAsset = environment.quoteRequest.inputAsset;
+
+    await expect(
+      constructCapabilityV0_1(
+        environment.port,
+        environment.selection,
+        environment.quoteRequest,
+        changed as never,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT", operation: "action" });
+    expect(environment.calls.action).toBe(0);
   });
 
   it("records unexpected synthetic node counts and targets without a Decision", async () => {

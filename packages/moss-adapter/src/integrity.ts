@@ -29,8 +29,11 @@ type CapabilityObservation = Readonly<{
 type ValidationState = {
   readonly active: WeakSet<object>;
   readonly completed: WeakSet<object>;
-  readonly allowRepeatedReferences: boolean;
+  readonly occurrences: WeakMap<object, number>;
+  readonly allowedOccurrences?: WeakMap<object, number>;
+  readonly allowAllRepeatedReferences: boolean;
   readonly allowFrozenArrays: boolean;
+  readonly requireFrozenObjects: boolean;
 };
 
 function hasLoneSurrogate(value: string): boolean {
@@ -154,11 +157,19 @@ function validateJsonExactNode(
   if (typeof value !== "object" || nodeIsProxy(value)) {
     return false;
   }
+  if (state.requireFrozenObjects && !Object.isFrozen(value)) {
+    return false;
+  }
   if (state.active.has(value)) {
     return false;
   }
+  const occurrences = (state.occurrences.get(value) ?? 0) + 1;
+  state.occurrences.set(value, occurrences);
   if (state.completed.has(value)) {
-    return state.allowRepeatedReferences;
+    return (
+      state.allowAllRepeatedReferences ||
+      occurrences <= (state.allowedOccurrences?.get(value) ?? 1)
+    );
   }
   state.active.add(value);
   const valid = Array.isArray(value)
@@ -174,14 +185,17 @@ function validateJsonExactNode(
 function validateJsonValue(
   value: unknown,
   options: Readonly<{
-    allowRepeatedReferences: boolean;
+    allowedOccurrences?: WeakMap<object, number>;
+    allowAllRepeatedReferences: boolean;
     allowFrozenArrays: boolean;
+    requireFrozenObjects: boolean;
   }>,
 ): value is JsonValue {
   try {
     return validateJsonExactNode(value, {
       active: new WeakSet<object>(),
       completed: new WeakSet<object>(),
+      occurrences: new WeakMap<object, number>(),
       ...options,
     });
   } catch {
@@ -191,17 +205,41 @@ function validateJsonValue(
 
 export function isJsonExactValue(value: unknown): value is JsonValue {
   return validateJsonValue(value, {
-    allowRepeatedReferences: false,
+    allowAllRepeatedReferences: false,
     allowFrozenArrays: false,
+    requireFrozenObjects: false,
   });
 }
 
 export function isJsonDescriptorClosedInput(
   value: unknown,
+  allowedOccurrences?: WeakMap<object, number>,
 ): value is JsonValue {
   return validateJsonValue(value, {
-    allowRepeatedReferences: true,
+    allowedOccurrences,
+    allowAllRepeatedReferences: false,
     allowFrozenArrays: true,
+    requireFrozenObjects: false,
+  });
+}
+
+export function isJsonDescriptorClosedGraph(
+  value: unknown,
+): value is JsonValue {
+  return validateJsonValue(value, {
+    allowAllRepeatedReferences: true,
+    allowFrozenArrays: true,
+    requireFrozenObjects: false,
+  });
+}
+
+export function isDeeplyFrozenJsonExactValue(
+  value: unknown,
+): value is JsonValue {
+  return validateJsonValue(value, {
+    allowAllRepeatedReferences: false,
+    allowFrozenArrays: true,
+    requireFrozenObjects: true,
   });
 }
 
@@ -235,7 +273,12 @@ export function currentCapabilityMatchesSnapshot(
   value: unknown,
   snapshot: RawCapability,
 ): boolean {
-  if (!isJsonExactValue(value) || Array.isArray(value)) {
+  if (
+    !isJsonExactValue(value) ||
+    Array.isArray(value) ||
+    !isDeeplyFrozenJsonExactValue(snapshot) ||
+    Array.isArray(snapshot)
+  ) {
     return false;
   }
   const current = canonicalizeOwned(value as RawCapability);
