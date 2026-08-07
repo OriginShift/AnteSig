@@ -28,6 +28,7 @@ describe("moss-adapter server-only boundary", () => {
       "MOSS_BUILD_INFO",
       "MossAdapterError",
       "collectAndSelectQuotesV0_1",
+      "constructCapabilityV0_1",
       "createFakeMossPort",
       "createProductionMossPort",
     ]);

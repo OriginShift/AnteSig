@@ -5,6 +5,7 @@ export { MossAdapterError } from "./errors.js";
 export { createFakeMossPort } from "./fake.js";
 export { createProductionMossPort } from "./production.js";
 export { collectAndSelectQuotesV0_1 } from "./selection.js";
+export { constructCapabilityV0_1 } from "./capability.js";
 
 export type { MossAdapterErrorCode } from "./errors.js";
 export type {
@@ -13,6 +14,8 @@ export type {
   AssetCatalogSnapshotV0_1,
   AssetCatalogV0_1,
   ChainId143,
+  CapabilityConstructionPolicyV0_1,
+  CapabilityConstructionResultV0_1,
   DecimalsRecordV0_1,
   MiniDemoDerivedSource,
   MossBuildInfo,

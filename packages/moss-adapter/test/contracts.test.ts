@@ -4,7 +4,10 @@ vi.mock("server-only", () => ({}));
 
 import {
   MOSS_BUILD_INFO,
+  constructCapabilityV0_1,
   createProductionMossPort,
+  type CapabilityConstructionPolicyV0_1,
+  type CapabilityConstructionResultV0_1,
   type QuoteCandidateOutcomeV0_1,
   type QuoteCollectionRequestV0_1,
   type QuoteTimingV0_1,
@@ -26,6 +29,10 @@ type _AssetMismatchCannotBeUnsnapshottable = AssertNever<
 >;
 type _AmountMismatchCannotBeUnsnapshottable = AssertNever<
   Extract<AmountMismatch, { raw: { status: "UNSNAPSHOTTABLE" } }>
+>;
+type CapabilitySelection = Parameters<typeof constructCapabilityV0_1>[1];
+type _CapabilityRejectsNotSelected = AssertNever<
+  Extract<CapabilitySelection, { status: "NOT_SELECTED" }>
 >;
 
 const typedProtocolId =
@@ -91,6 +98,35 @@ void [
   amountMismatchSnapshotted,
 ];
 
+const typedCapabilityPolicy = {
+  schemaVersion: "0.1",
+  policyId: "synthetic-capability",
+  sourceVersion: "1.0.0",
+  provenance: "SYNTHETIC_TEST",
+  sourceReference: "test/capability-policy-v1",
+  chainId: 143,
+  catalogDigest:
+    "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  protocolId: typedProtocolId,
+  inputAsset: { kind: "NATIVE" },
+  outputAsset: { kind: "NATIVE" },
+  expectedNodeCount: {
+    capabilityNodes: 1,
+    transactionNodes: 0,
+    totalNodes: 1,
+  },
+  expectedTransactionTargets: [],
+} as const satisfies CapabilityConstructionPolicyV0_1;
+const callerApprovedPolicy = {
+  ...typedCapabilityPolicy,
+  provenance: "MAINTAINER_APPROVED",
+} as const;
+// @ts-expect-error Production approval cannot be represented by the v0.1 policy.
+const _invalidCallerApprovedPolicy: CapabilityConstructionPolicyV0_1 =
+  callerApprovedPolicy;
+const typedCapabilityResult = {} as CapabilityConstructionResultV0_1;
+void [typedCapabilityPolicy, typedCapabilityResult];
+
 function syntheticBindings() {
   const riskLabels = ["SYNTHETIC_PRICE_MOVEMENT"];
   const stub = {
@@ -134,6 +170,10 @@ function syntheticBindings() {
 }
 
 describe("Moss adapter evidence contracts", () => {
+  it("adds only the authorized Capability runtime operation", () => {
+    expect(constructCapabilityV0_1).toBeTypeOf("function");
+  });
+
   it("preserves the loaded Stub and risk labels while separating derived data", async () => {
     const { bindings, stub, riskLabels } = syntheticBindings();
     const port = createProductionMossPort(bindings);

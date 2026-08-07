@@ -17,6 +17,7 @@ const expectedRuntimeExports = [
   "MOSS_BUILD_INFO",
   "MossAdapterError",
   "collectAndSelectQuotesV0_1",
+  "constructCapabilityV0_1",
   "createFakeMossPort",
   "createProductionMossPort",
 ];
@@ -34,6 +35,8 @@ for (const typeOnlyName of [
   "RawCapabilityEvidence",
   "RawSimulationEvidence",
   "QuoteCollectionResultV0_1",
+  "CapabilityConstructionPolicyV0_1",
+  "CapabilityConstructionResultV0_1",
 ]) {
   assert.equal(typeOnlyName in packageEntry, false);
 }
