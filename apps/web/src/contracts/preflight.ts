@@ -1,6 +1,10 @@
 import {
+  JsonPointerSyntaxListSchema,
+  JsonPointerSyntaxSchema,
   IntentSchema,
   PreflightReportSchema,
+  ReportIdSchema,
+  StopReasonCodeV0_1Schema,
 } from "@moss-mini-demo/report-schema";
 import { z } from "zod";
 
@@ -70,12 +74,37 @@ const FixtureReportSchema = PreflightReportSchema.refine(
   "FIXTURE responses require FIXTURE provenance",
 );
 
+const PreflightPresentationReasonSchema = z.strictObject({
+  code: StopReasonCodeV0_1Schema,
+  explanation: z.string().min(1).max(512),
+  sourceReferences: JsonPointerSyntaxListSchema,
+});
+
+const PreflightPresentationDecisionSchema = z.discriminatedUnion("status", [
+  z.strictObject({ status: z.literal("MANUAL_REVIEW") }),
+  z.strictObject({
+    status: z.literal("STOP"),
+    heading: z.literal("STOP"),
+    actionBoundary: z.literal("DO_NOT_PROCEED_TO_SIGNER"),
+    reasons: z.array(PreflightPresentationReasonSchema).min(1),
+  }),
+]);
+
+export const PreflightPresentationSchema = z.strictObject({
+  schemaVersion: z.literal("0.1"),
+  reportId: ReportIdSchema,
+  decision: PreflightPresentationDecisionSchema,
+  sourceContextReferences: z.array(JsonPointerSyntaxSchema),
+  limitationReferences: z.array(JsonPointerSyntaxSchema),
+});
+
 export const LivePreflightSuccessSchema = z.strictObject({
   contractVersion: z.literal(PREFLIGHT_CONTRACT_VERSION),
   ok: z.literal(true),
   runId: RunIdSchema,
   mode: z.literal("LIVE"),
   report: LiveReportSchema,
+  presentation: PreflightPresentationSchema,
 });
 
 export const FixturePreflightSuccessSchema = z.strictObject({
@@ -85,12 +114,101 @@ export const FixturePreflightSuccessSchema = z.strictObject({
   mode: z.literal("FIXTURE"),
   scenario: FixtureScenarioSchema,
   report: FixtureReportSchema,
+  presentation: PreflightPresentationSchema,
 });
 
-export const PreflightSuccessResponseSchema = z.discriminatedUnion("mode", [
+const PreflightSuccessResponseBaseSchema = z.discriminatedUnion("mode", [
   LivePreflightSuccessSchema,
   FixturePreflightSuccessSchema,
 ]);
+
+function expectedSourceContextReferences(
+  report: z.infer<typeof PreflightReportSchema>,
+): string[] {
+  if (
+    report.simulation.availability !== "AVAILABLE" ||
+    typeof report.simulation.raw !== "object" ||
+    report.simulation.raw === null ||
+    Array.isArray(report.simulation.raw)
+  ) {
+    return [];
+  }
+  const context = report.simulation.raw.context;
+  if (
+    typeof context !== "object" ||
+    context === null ||
+    Array.isArray(context)
+  ) {
+    return [];
+  }
+  return [
+    ...(Object.hasOwn(context, "block")
+      ? ["/simulation/raw/context/block"]
+      : []),
+    ...(Object.hasOwn(context, "moss") ? ["/simulation/raw/context/moss"] : []),
+  ];
+}
+
+export const PreflightSuccessResponseSchema =
+  PreflightSuccessResponseBaseSchema.superRefine((response, context) => {
+    const presentation = response.presentation;
+    if (presentation.reportId !== response.report.reportId) {
+      context.addIssue({
+        code: "custom",
+        message: "Presentation reportId must match report",
+        path: ["presentation", "reportId"],
+      });
+    }
+    if (presentation.decision.status !== response.report.decision.status) {
+      context.addIssue({
+        code: "custom",
+        message: "Presentation Decision must match report",
+        path: ["presentation", "decision"],
+      });
+    } else if (
+      presentation.decision.status === "STOP" &&
+      response.report.decision.status === "STOP"
+    ) {
+      const presented = presentation.decision.reasons.map((reason) => ({
+        code: reason.code,
+        sourceReferences: reason.sourceReferences,
+      }));
+      if (
+        JSON.stringify(presented) !==
+        JSON.stringify(response.report.decision.reasons)
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Presentation STOP reasons must match report",
+          path: ["presentation", "decision", "reasons"],
+        });
+      }
+    }
+
+    const limitationReferences = response.report.limitations.map(
+      (_limitation, index) => `/limitations/${index}`,
+    );
+    if (
+      JSON.stringify(presentation.limitationReferences) !==
+      JSON.stringify(limitationReferences)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Presentation limitation references must match report",
+        path: ["presentation", "limitationReferences"],
+      });
+    }
+    if (
+      JSON.stringify(presentation.sourceContextReferences) !==
+      JSON.stringify(expectedSourceContextReferences(response.report))
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Presentation source context must match report",
+        path: ["presentation", "sourceContextReferences"],
+      });
+    }
+  });
 
 export const PREFLIGHT_ERROR_CODES = [
   "INVALID_JSON",
@@ -98,6 +216,7 @@ export const PREFLIGHT_ERROR_CODES = [
   "REQUEST_TOO_LARGE",
   "UNSUPPORTED_MEDIA_TYPE",
   "LIVE_UNAVAILABLE",
+  "PREFLIGHT_TIMEOUT",
   "RESPONSE_TOO_LARGE",
   "INTERNAL_ERROR",
 ] as const;
@@ -124,6 +243,7 @@ export type PreflightRequest = z.infer<typeof PreflightRequestSchema>;
 export type PreflightSuccessResponse = z.infer<
   typeof PreflightSuccessResponseSchema
 >;
+export type PreflightPresentation = z.infer<typeof PreflightPresentationSchema>;
 export type PreflightErrorCode = z.infer<typeof PreflightErrorCodeSchema>;
 export type PreflightErrorResponse = z.infer<
   typeof PreflightErrorResponseSchema

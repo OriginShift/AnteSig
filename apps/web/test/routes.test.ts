@@ -150,7 +150,12 @@ describe("POST /api/preflight", () => {
       mode: "FIXTURE",
       scenario: "manual-review-success",
       report: { provenance: "FIXTURE" },
+      presentation: {
+        schemaVersion: "0.1",
+        decision: { status: "MANUAL_REVIEW" },
+      },
     });
+    expect(body.presentation.reportId).toBe(body.report.reportId);
     expect(generateRunId).toHaveBeenCalledTimes(1);
   });
 
@@ -274,12 +279,14 @@ describe("POST /api/preflight", () => {
   });
 
   it("redacts unexpected service failures", async () => {
+    const logger = { error: vi.fn() };
     const service: PreflightService = {
       run: () => Promise.reject(new Error("private stack and environment")),
     };
     const handler = createPreflightHandler({
       service,
       generateRunId: () => RUN_ID,
+      logger,
     });
     const response = await handler(
       jsonRequest(
@@ -292,6 +299,73 @@ describe("POST /api/preflight", () => {
     );
     const body = await expectError(response, 500, "INTERNAL_ERROR");
     expect(JSON.stringify(body)).not.toMatch(/private|stack|environment/i);
+    expect(logger.error).toHaveBeenCalledWith({
+      event: "PREFLIGHT_INTERNAL_ERROR",
+      runId: RUN_ID,
+      code: "INTERNAL_ERROR",
+    });
+    expect(JSON.stringify(logger.error.mock.calls)).not.toMatch(
+      /private|stack|environment/i,
+    );
+  });
+
+  it("returns a structured 504 with no Decision on hard timeout", async () => {
+    const service: PreflightService = {
+      run: () =>
+        Promise.resolve({
+          status: "TIMEOUT",
+          code: "PREFLIGHT_TIMEOUT",
+          message: "untrusted timeout detail",
+        }),
+    };
+    const handler = createPreflightHandler({
+      service,
+      generateRunId: () => RUN_ID,
+    });
+    const fixture = readManualReviewFixture();
+    const response = await handler(
+      jsonRequest(
+        JSON.stringify({
+          contractVersion: "0.1",
+          mode: "LIVE",
+          intent: fixture.intent,
+        }),
+      ),
+    );
+    const body = await expectError(response, 504, "PREFLIGHT_TIMEOUT");
+    expect(body).not.toHaveProperty("decision");
+    expect(JSON.stringify(body)).not.toContain("untrusted timeout detail");
+  });
+
+  it("rejects credential-shaped raw evidence instead of returning it", async () => {
+    const report = structuredClone(readManualReviewFixture());
+    if (report.capability.availability !== "AVAILABLE") {
+      throw new Error("test Fixture must provide Capability evidence");
+    }
+    report.capability.raw = {
+      original: report.capability.raw,
+      privateKey: "do-not-return-this",
+    };
+    const logger = { error: vi.fn() };
+    const handler = createPreflightHandler({
+      service: { run: () => Promise.resolve({ status: "SUCCESS", report }) },
+      generateRunId: () => RUN_ID,
+      logger,
+    });
+    const response = await handler(
+      jsonRequest(
+        JSON.stringify({
+          contractVersion: "0.1",
+          mode: "FIXTURE",
+          scenario: "manual-review-success",
+        }),
+      ),
+    );
+    const body = await expectError(response, 500, "INTERNAL_ERROR");
+    expect(JSON.stringify(body)).not.toContain("do-not-return-this");
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain(
+      "do-not-return-this",
+    );
   });
 
   it("ignores an unavailable service's untrusted message", async () => {

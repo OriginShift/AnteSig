@@ -1,12 +1,16 @@
 import { FakePreflightService } from "../../../src/server/fake-preflight-service";
 import { createPreflightHandler } from "../../../src/server/preflight-handler";
+import { PreflightOrchestrator } from "../../../src/server/preflight-orchestrator";
 import { createRunId } from "../../../src/server/run-id";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const handlePreflight = createPreflightHandler({
-  service: new FakePreflightService(),
+  service: new PreflightOrchestrator({
+    fixtureService: new FakePreflightService(),
+    resolveLiveSession: () => undefined,
+  }),
   generateRunId: createRunId,
 });
 

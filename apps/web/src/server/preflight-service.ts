@@ -14,6 +14,11 @@ export type PreflightServiceResult =
       status: "UNAVAILABLE";
       code: "LIVE_UNAVAILABLE";
       message: string;
+    }>
+  | Readonly<{
+      status: "TIMEOUT";
+      code: "PREFLIGHT_TIMEOUT";
+      message: string;
     }>;
 
 export interface PreflightService {

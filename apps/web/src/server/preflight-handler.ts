@@ -1,5 +1,6 @@
 import "server-only";
 
+import { derivePreflightPresentationV0_1 } from "@moss-mini-demo/preflight-core";
 import {
   MAX_PREFLIGHT_RESPONSE_BYTES,
   PREFLIGHT_CONTRACT_VERSION,
@@ -40,6 +41,10 @@ const ERROR_RESPONSES = {
     status: 503,
     message: "Live preflight is unavailable in this baseline.",
   },
+  PREFLIGHT_TIMEOUT: {
+    status: 504,
+    message: "The preflight request exceeded its hard deadline.",
+  },
   RESPONSE_TOO_LARGE: {
     status: 500,
     message: "Response exceeds the maximum size.",
@@ -56,7 +61,48 @@ const ERROR_RESPONSES = {
 type PreflightHandlerDependencies = Readonly<{
   service: PreflightService;
   generateRunId: () => RunId;
+  logger?: PreflightHandlerLogger;
 }>;
+
+export type PreflightHandlerLogEvent = Readonly<{
+  event: "PREFLIGHT_INTERNAL_ERROR";
+  runId: RunId;
+  code: "INTERNAL_ERROR" | "RESPONSE_TOO_LARGE";
+}>;
+
+export interface PreflightHandlerLogger {
+  error(event: PreflightHandlerLogEvent): void;
+}
+
+const SENSITIVE_KEYS = new Set([
+  "authorization",
+  "cookie",
+  "credential",
+  "credentials",
+  "apikey",
+  "password",
+  "privatekey",
+  "rpcurl",
+  "secret",
+]);
+
+function normalizedKey(value: string): string {
+  return value.toLowerCase().replaceAll(/[^a-z0-9]/g, "");
+}
+
+function containsSensitiveMaterial(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(containsSensitiveMaterial);
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return Object.entries(value).some(
+    ([key, child]) =>
+      SENSITIVE_KEYS.has(normalizedKey(key)) ||
+      containsSensitiveMaterial(child),
+  );
+}
 
 function errorResponse(runId: RunId, code: PreflightErrorCode): Response {
   const definition = ERROR_RESPONSES[code];
@@ -72,6 +118,7 @@ function errorResponse(runId: RunId, code: PreflightErrorCode): Response {
 export function createPreflightHandler({
   service,
   generateRunId,
+  logger,
 }: PreflightHandlerDependencies): (request: Request) => Promise<Response> {
   return async (request) => {
     const runId = generateRunId();
@@ -108,6 +155,11 @@ export function createPreflightHandler({
       if (result.status === "UNAVAILABLE") {
         return errorResponse(runId, "LIVE_UNAVAILABLE");
       }
+      if (result.status === "TIMEOUT") {
+        return errorResponse(runId, "PREFLIGHT_TIMEOUT");
+      }
+
+      const presentation = derivePreflightPresentationV0_1(result.report);
 
       const success =
         parsedRequest.data.mode === "FIXTURE"
@@ -118,6 +170,7 @@ export function createPreflightHandler({
               mode: "FIXTURE",
               scenario: parsedRequest.data.scenario,
               report: result.report,
+              presentation,
             }
           : {
               contractVersion: PREFLIGHT_CONTRACT_VERSION,
@@ -125,18 +178,43 @@ export function createPreflightHandler({
               runId,
               mode: "LIVE",
               report: result.report,
+              presentation,
             };
       const parsedResponse = PreflightSuccessResponseSchema.safeParse(success);
       if (!parsedResponse.success) {
+        logger?.error({
+          event: "PREFLIGHT_INTERNAL_ERROR",
+          runId,
+          code: "INTERNAL_ERROR",
+        });
+        return errorResponse(runId, "INTERNAL_ERROR");
+      }
+
+      if (containsSensitiveMaterial(parsedResponse.data)) {
+        logger?.error({
+          event: "PREFLIGHT_INTERNAL_ERROR",
+          runId,
+          code: "INTERNAL_ERROR",
+        });
         return errorResponse(runId, "INTERNAL_ERROR");
       }
 
       const serializedResponse = JSON.stringify(parsedResponse.data);
       if (utf8ByteLength(serializedResponse) > MAX_PREFLIGHT_RESPONSE_BYTES) {
+        logger?.error({
+          event: "PREFLIGHT_INTERNAL_ERROR",
+          runId,
+          code: "RESPONSE_TOO_LARGE",
+        });
         return errorResponse(runId, "RESPONSE_TOO_LARGE");
       }
       return createJsonResponse(serializedResponse, 200);
     } catch {
+      logger?.error({
+        event: "PREFLIGHT_INTERNAL_ERROR",
+        runId,
+        code: "INTERNAL_ERROR",
+      });
       return errorResponse(runId, "INTERNAL_ERROR");
     }
   };
