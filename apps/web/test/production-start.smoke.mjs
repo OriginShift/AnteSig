@@ -29,7 +29,7 @@ const expectedHealth = {
     },
   },
   network: { configured: false, id: null },
-  clear402: { enabled: false },
+  clear402: { enabled: process.env.CLEAR402_ENABLED === "true" },
 };
 
 function delay(milliseconds) {
@@ -91,6 +91,8 @@ const child = spawn(command, ["start"], {
     ...process.env,
     HOSTNAME: "127.0.0.1",
     NEXT_TELEMETRY_DISABLED: "1",
+    CLEAR402_ENABLED:
+      process.env.CLEAR402_ENABLED === "true" ? "true" : "false",
     PORT: String(port),
   },
   stdio: ["ignore", "pipe", "pipe"],

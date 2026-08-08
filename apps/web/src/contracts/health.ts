@@ -26,7 +26,7 @@ export const HealthResponseSchema = z.strictObject({
     id: z.null(),
   }),
   clear402: z.strictObject({
-    enabled: z.literal(false),
+    enabled: z.boolean(),
   }),
 });
 

@@ -1,4 +1,5 @@
 import { HealthResponseSchema } from "../../../src/contracts/health";
+import { isClear402Enabled } from "../../../src/server/clear402-config";
 import { MOSS_BUILD_INFO } from "../../../src/server/moss-build-info";
 
 export const runtime = "nodejs";
@@ -20,7 +21,7 @@ export async function GET(): Promise<Response> {
       id: null,
     },
     clear402: {
-      enabled: false,
+      enabled: isClear402Enabled(),
     },
   });
 

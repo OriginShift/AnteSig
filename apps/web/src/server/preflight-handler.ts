@@ -2,6 +2,12 @@ import "server-only";
 
 import { derivePreflightPresentationV0_1 } from "@moss-mini-demo/preflight-core";
 import {
+  CLEAR402_GENERATION_ERROR_CODE,
+  CLEAR402_GENERATION_ERROR_MESSAGE,
+  Clear402EnabledPreflightSuccessResponseSchema,
+  type Clear402PreflightExtension,
+} from "../contracts/clear402";
+import {
   MAX_PREFLIGHT_RESPONSE_BYTES,
   PREFLIGHT_CONTRACT_VERSION,
   PreflightErrorResponseSchema,
@@ -19,6 +25,7 @@ import {
   utf8ByteLength,
 } from "./http-json";
 import type { PreflightService } from "./preflight-service";
+import type { CredentialService } from "./credential-service";
 
 const ERROR_RESPONSES = {
   INVALID_JSON: {
@@ -61,14 +68,21 @@ const ERROR_RESPONSES = {
 type PreflightHandlerDependencies = Readonly<{
   service: PreflightService;
   generateRunId: () => RunId;
+  credentialService?: CredentialService;
   logger?: PreflightHandlerLogger;
 }>;
 
-export type PreflightHandlerLogEvent = Readonly<{
-  event: "PREFLIGHT_INTERNAL_ERROR";
-  runId: RunId;
-  code: "INTERNAL_ERROR" | "RESPONSE_TOO_LARGE";
-}>;
+export type PreflightHandlerLogEvent =
+  | Readonly<{
+      event: "PREFLIGHT_INTERNAL_ERROR";
+      runId: RunId;
+      code: "INTERNAL_ERROR" | "RESPONSE_TOO_LARGE";
+    }>
+  | Readonly<{
+      event: "CLEAR402_GENERATION_ERROR";
+      runId: RunId;
+      code: typeof CLEAR402_GENERATION_ERROR_CODE;
+    }>;
 
 export interface PreflightHandlerLogger {
   error(event: PreflightHandlerLogEvent): void;
@@ -118,6 +132,7 @@ function errorResponse(runId: RunId, code: PreflightErrorCode): Response {
 export function createPreflightHandler({
   service,
   generateRunId,
+  credentialService,
   logger,
 }: PreflightHandlerDependencies): (request: Request) => Promise<Response> {
   return async (request) => {
@@ -199,7 +214,35 @@ export function createPreflightHandler({
         return errorResponse(runId, "INTERNAL_ERROR");
       }
 
-      const serializedResponse = JSON.stringify(parsedResponse.data);
+      let response: unknown = parsedResponse.data;
+      if (credentialService !== undefined) {
+        let clear402: Clear402PreflightExtension;
+        try {
+          clear402 = {
+            status: "AVAILABLE",
+            credential: credentialService.generate(parsedResponse.data.report),
+          };
+        } catch {
+          logger?.error({
+            event: "CLEAR402_GENERATION_ERROR",
+            runId,
+            code: CLEAR402_GENERATION_ERROR_CODE,
+          });
+          clear402 = {
+            status: "ERROR",
+            error: {
+              code: CLEAR402_GENERATION_ERROR_CODE,
+              message: CLEAR402_GENERATION_ERROR_MESSAGE,
+            },
+          };
+        }
+        response = Clear402EnabledPreflightSuccessResponseSchema.parse({
+          ...parsedResponse.data,
+          clear402,
+        });
+      }
+
+      const serializedResponse = JSON.stringify(response);
       if (utf8ByteLength(serializedResponse) > MAX_PREFLIGHT_RESPONSE_BYTES) {
         logger?.error({
           event: "PREFLIGHT_INTERNAL_ERROR",
