@@ -327,11 +327,11 @@ unreferenced STOP reasons.
 
 ## Related Issues and pull requests
 
-- [#5 M1-02: Define PreflightReport v0.1 runtime schema](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/5)
-- [#6 M1-03: Decision Engine](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/6)
-- [#7 M1-04: Success Fixture](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/7)
-- [#8 M1-05: STOP Fixture](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/8)
-- [#9 M1-06: Documentation](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/9)
+- [#5 M1-02: Define PreflightReport v0.1 runtime schema](https://github.com/OriginShift/AnteSig/issues/5)
+- [#6 M1-03: Decision Engine](https://github.com/OriginShift/AnteSig/issues/6)
+- [#7 M1-04: Success Fixture](https://github.com/OriginShift/AnteSig/issues/7)
+- [#8 M1-05: STOP Fixture](https://github.com/OriginShift/AnteSig/issues/8)
+- [#9 M1-06: Documentation](https://github.com/OriginShift/AnteSig/issues/9)
 
 This accepted decision is delivered by its own documentation pull request. That
 pull request must not close #5 or authorize its implementation before it is

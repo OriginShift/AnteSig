@@ -281,12 +281,12 @@ disabled API behavior, and unchanged Decisions.
 
 ## Related Issues and pull requests
 
-- [#43 Credential boundary decision](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/43)
-- [#44 Credential schema package](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/44)
-- [#45 RFC 8785 digest and verifier](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/45)
-- [#46 Optional generation and verify API](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/46)
-- [#47 Credential UI](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/47)
-- [#48 Gate B](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/48)
+- [#43 Credential boundary decision](https://github.com/OriginShift/AnteSig/issues/43)
+- [#44 Credential schema package](https://github.com/OriginShift/AnteSig/issues/44)
+- [#45 RFC 8785 digest and verifier](https://github.com/OriginShift/AnteSig/issues/45)
+- [#46 Optional generation and verify API](https://github.com/OriginShift/AnteSig/issues/46)
+- [#47 Credential UI](https://github.com/OriginShift/AnteSig/issues/47)
+- [#48 Gate B](https://github.com/OriginShift/AnteSig/issues/48)
 - [ADR 0001](./0001-preflight-report-v0-1-schema-contract.md)
 - [ADR 0004](./0004-decision-input-and-stop-reason-correction.md)
 

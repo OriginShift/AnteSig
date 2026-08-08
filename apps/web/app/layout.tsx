@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Preflight Workbench | Moss-Mini Demo",
-  description: "Inspect a structured Monad preflight run.",
+  title: "AnteSig | Preflight Workbench",
+  description:
+    "Inspect structured Monad preflight evidence before wallet review.",
+  applicationName: "AnteSig",
   icons: {
-    icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    icon: "/brand/antesig-logo.png",
+    apple: "/brand/antesig-logo.png",
   },
 };
 

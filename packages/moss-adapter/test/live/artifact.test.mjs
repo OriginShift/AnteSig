@@ -23,7 +23,7 @@ function provenInput(overrides = {}) {
       sourceMode: "INTEGRATION_FORK",
       upstreamRepository: "https://github.com/nishuzumi/moss",
       upstreamCommit: PINNED_MOSS_COMMIT,
-      integrationRepository: "https://github.com/Moss-Mini-Demo/moss",
+      integrationRepository: "https://github.com/OriginShift/moss",
       integrationCommit: PINNED_MOSS_COMMIT,
       patchsetDigest:
         "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

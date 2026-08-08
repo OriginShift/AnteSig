@@ -9,7 +9,7 @@ export async function GET(): Promise<Response> {
     contractVersion: "0.1",
     status: "ok",
     app: {
-      name: "moss-mini-demo",
+      name: "antesig",
       version: "0.0.0",
       runtime: "nodejs",
       nodeVersion: "22.23.1",

@@ -4,7 +4,7 @@ export const HealthResponseSchema = z.strictObject({
   contractVersion: z.literal("0.1"),
   status: z.literal("ok"),
   app: z.strictObject({
-    name: z.literal("moss-mini-demo"),
+    name: z.literal("antesig"),
     version: z.literal("0.0.0"),
     runtime: z.literal("nodejs"),
     nodeVersion: z.literal("22.23.1"),

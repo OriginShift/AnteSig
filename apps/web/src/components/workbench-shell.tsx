@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { PreflightClientError, requestPreflight } from "../client/api-client";
 import {
@@ -183,8 +184,19 @@ export function WorkbenchShell() {
     <div className="workbench-shell">
       <header className="app-bar">
         <div className="brand-lockup">
-          <span className="brand-name">Moss-Mini Demo</span>
-          <span className="brand-surface">Preflight workbench</span>
+          <Image
+            alt="AnteSig logo"
+            className="brand-logo"
+            height={1168}
+            priority
+            sizes="58px"
+            src="/brand/antesig-logo.png"
+            width={1188}
+          />
+          <div className="brand-copy">
+            <span className="brand-name">AnteSig</span>
+            <span className="brand-surface">Preflight workbench</span>
+          </div>
         </div>
         <ul aria-label="Environment" className="environment-list">
           <li className="environment-item">

@@ -2,7 +2,7 @@
 
 ## Current scope
 
-Moss-Mini Demo contains a production-buildable and production-startable
+AnteSig contains a production-buildable and production-startable
 Next.js Web/API baseline, not an integrated runnable application. Its strict
 API envelope, fixed health response, and offline Fake service operate only on
 allowlisted synthetic Fixtures. Valid `LIVE` requests return

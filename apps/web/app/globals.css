@@ -10,6 +10,7 @@
   --accent: #0f6b5d;
   --accent-strong: #084d43;
   --accent-soft: #e0f0ec;
+  --brand: #8f16d8;
   --warning: #8a5a00;
   --warning-soft: #fff2cf;
   --danger: #a33a36;
@@ -57,23 +58,40 @@ textarea:focus-visible,
 .app-bar {
   align-items: center;
   background: #162329;
+  border-bottom: 3px solid var(--brand);
   color: #ffffff;
   display: flex;
   justify-content: space-between;
-  min-height: 58px;
+  min-height: 78px;
   padding: 10px 28px;
 }
 
 .brand-lockup {
-  align-items: baseline;
+  align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand-logo {
+  aspect-ratio: 1188 / 1168;
+  background: #ffffff;
+  border: 1px solid #ffffff;
+  border-radius: 4px;
+  flex: 0 0 auto;
+  height: auto;
+  width: 58px;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 2px;
   min-width: 0;
 }
 
 .brand-name {
-  font-size: 0.98rem;
-  font-weight: 750;
+  font-size: 1.08rem;
+  font-weight: 800;
   white-space: nowrap;
 }
 
@@ -1568,7 +1586,6 @@ input:focus-visible {
     padding: 12px 18px;
   }
 
-  .brand-lockup,
   .workbench-heading {
     flex-direction: column;
     gap: 3px;

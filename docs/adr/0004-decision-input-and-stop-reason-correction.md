@@ -204,9 +204,9 @@ reference ownership, multi-reason order, canonical `items/<i>` paths, obsolete
 
 ## Related Issues and pull requests
 
-- [#18 M1-07 decision](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/18)
-- [#19 M1-08 implementation](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/19)
-- [#6 Decision Engine](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/6)
+- [#18 M1-07 decision](https://github.com/OriginShift/AnteSig/issues/18)
+- [#19 M1-08 implementation](https://github.com/OriginShift/AnteSig/issues/19)
+- [#6 Decision Engine](https://github.com/OriginShift/AnteSig/issues/6)
 - [ADR 0001](./0001-preflight-report-v0-1-schema-contract.md)
 - [ADR 0002](./0002-preflight-report-v0-1-implementation-values.md)
 - [ADR 0003](./0003-decision-engine-v0-1-contract.md)

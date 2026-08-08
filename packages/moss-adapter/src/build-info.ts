@@ -11,7 +11,7 @@ export const MOSS_BUILD_INFO = Object.freeze({
   sourceMode: "INTEGRATION_FORK",
   upstreamRepository: "https://github.com/nishuzumi/moss",
   upstreamCommit: "1ae6b6322d51fae9104f047efb94e601050b967f",
-  integrationRepository: "https://github.com/Moss-Mini-Demo/moss",
+  integrationRepository: "https://github.com/OriginShift/moss",
   integrationCommit: "1ae6b6322d51fae9104f047efb94e601050b967f",
   patchsetDigest:
     "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

@@ -2,7 +2,7 @@
 
 ## Boundary statement
 
-Moss-Mini Demo is a preflight evidence and explanation layer. It is not a
+AnteSig is a preflight evidence and explanation layer. It is not a
 wallet, signer, transaction executor, safety oracle, or authorization system.
 The application may determine that evidence requires stopping or that a result
 may proceed to manual review. It cannot authorize a transaction.

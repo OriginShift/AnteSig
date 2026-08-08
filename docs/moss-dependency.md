@@ -4,13 +4,13 @@ Audit date: 2026-08-05 (Asia/Hong_Kong)
 
 ## Purpose and boundary
 
-Moss-Mini Demo pins Moss as an independent Git submodule at `vendor/moss` so
+AnteSig pins Moss as an independent Git submodule at `vendor/moss` so
 that a recursive clone and CI use the same reviewable source tree. The pin is
 dependency provenance and an offline build input only. It does not implement a
 Moss adapter, run Moss or Monad against a chain, create protocol evidence, or
-show that Moss or the Mini-Demo is safe or operational.
+show that Moss or AnteSig is safe or operational.
 
-Moss source remains in its own pnpm workspace. The Mini-Demo root workspace
+Moss source remains in its own pnpm workspace. The AnteSig root workspace
 does not register `vendor/moss`, does not copy Moss source, and does not resolve
 these source packages from npm.
 
@@ -38,7 +38,7 @@ The exact record for this dependency pin is:
   "sourceMode": "INTEGRATION_FORK",
   "upstreamRepository": "https://github.com/nishuzumi/moss",
   "upstreamCommit": "1ae6b6322d51fae9104f047efb94e601050b967f",
-  "integrationRepository": "https://github.com/Moss-Mini-Demo/moss",
+  "integrationRepository": "https://github.com/OriginShift/moss",
   "integrationCommit": "1ae6b6322d51fae9104f047efb94e601050b967f",
   "patchsetDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "packages": {
@@ -150,7 +150,7 @@ submodule during clone:
 ```bash
 issue24_clone_dir=$(mktemp -d)
 git clone --recurse-submodules \
-  https://github.com/Moss-Mini-Demo/moss-mini-demo.git \
+  https://github.com/OriginShift/AnteSig.git \
   "$issue24_clone_dir/repo"
 cd "$issue24_clone_dir/repo"
 ```

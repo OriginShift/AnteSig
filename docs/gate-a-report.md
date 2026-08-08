@@ -23,7 +23,7 @@ This is single-operator QA. No independent-review claim is made.
 - Clear402: explicitly disabled with `CLEAR402_ENABLED=false`
 - Network: not configured
 - Subject main quality gate:
-  [run 31258670779](https://github.com/Moss-Mini-Demo/moss-mini-demo/actions/runs/31258670779),
+  [run 31258670779](https://github.com/OriginShift/AnteSig/actions/runs/31258670779),
   `SUCCESS` on the exact subject SHA under Node.js 22.23.1
 
 ## Machine Acceptance
