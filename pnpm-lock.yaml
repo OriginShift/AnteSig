@@ -82,6 +82,9 @@ importers:
 
   packages/preflight-core:
     dependencies:
+      '@moss-mini-demo/decision-engine':
+        specifier: workspace:*
+        version: link:../decision-engine
       '@moss-mini-demo/report-schema':
         specifier: workspace:*
         version: link:../report-schema

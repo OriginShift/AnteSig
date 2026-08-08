@@ -11,9 +11,10 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test:coverage": "vitest run test/alignment.test.ts test/source-references.test.ts --coverage.enabled --coverage.provider=v8 --coverage.include=src/**/*.ts --coverage.thresholds.100"
+    "test:coverage": "vitest run test/alignment.test.ts test/source-references.test.ts test/assembler.test.ts test/presentation.test.ts --coverage.enabled --coverage.provider=v8 --coverage.include=src/**/*.ts --coverage.thresholds.100"
   },
   "dependencies": {
+    "@moss-mini-demo/decision-engine": "workspace:*",
     "@moss-mini-demo/report-schema": "workspace:*",
     "zod": "4.4.3"
   }
