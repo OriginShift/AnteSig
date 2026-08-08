@@ -100,3 +100,7 @@ export const Clear402VerifyResponseSchema = z.union([
   Clear402VerifyInvalidResponseSchema,
   Clear402VerifyRequestErrorResponseSchema,
 ]);
+
+export type Clear402VerifyResponse = z.infer<
+  typeof Clear402VerifyResponseSchema
+>;
