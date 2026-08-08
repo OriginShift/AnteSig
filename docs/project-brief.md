@@ -2,12 +2,12 @@
 
 ## Product
 
-Moss-Mini Demo is a planned preflight evidence console for Monad operations
+AnteSig is a preflight evidence console for Monad operations
 prepared by an AI agent. It is intended to help a person understand what an
 agent selected, what Moss constructed, what simulation observed, and why the
 application stopped or allowed the result to proceed to manual review.
 
-Moss supplies underlying capabilities and evidence. Moss-Mini Demo is the
+Moss supplies underlying capabilities and evidence. AnteSig is the
 application that will preserve, align, and present that evidence.
 
 ## Problem

@@ -9,7 +9,7 @@ Decision owner: Maintainer
 [ADR 0001](./0001-preflight-report-v0-1-schema-contract.md) accepts the
 PreflightReport v0.1 evidence boundary, module ownership, scalar categories,
 and cross-field invariants. Before authorizing implementation in
-[#5](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/5), the Maintainer
+[#5](https://github.com/OriginShift/AnteSig/issues/5), the Maintainer
 must fix the exact discriminators, enum values, and minimum canonical formats
 that ADR 0001 intentionally did not leave to an implementation pull request.
 
@@ -257,7 +257,7 @@ record on #5.
 ## Related Issues and pull requests
 
 - [ADR 0001: PreflightReport v0.1 Schema Contract](./0001-preflight-report-v0-1-schema-contract.md)
-- [#5 M1-02: Define PreflightReport v0.1 runtime schema](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/5)
+- [#5 M1-02: Define PreflightReport v0.1 runtime schema](https://github.com/OriginShift/AnteSig/issues/5)
 
 This ADR authorizes no implementation by itself. Authorization, assignee,
 labels, and Project status are recorded separately on #5 after this decision is

@@ -9,6 +9,29 @@ const WRITE_SCREENSHOTS = process.env.E2E_WRITE_SCREENSHOTS !== "0";
 
 async function runFixture(page: Page, name: "Happy path" | "Amount mismatch") {
   await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page).toHaveTitle("AnteSig | Preflight Workbench");
+  await expect(page.locator(".brand-name")).toHaveText("AnteSig");
+  const logo = page.getByRole("img", { name: "AnteSig logo" });
+  await expect(logo).toBeVisible();
+  const logoGeometry = await logo.evaluate((image: HTMLImageElement) => ({
+    renderedHeight: image.getBoundingClientRect().height,
+    renderedWidth: image.getBoundingClientRect().width,
+  }));
+  const sourceGeometry = await page.evaluate(async () => {
+    const source = new Image();
+    source.src = "/brand/antesig-logo.png";
+    await source.decode();
+    return {
+      naturalHeight: source.naturalHeight,
+      naturalWidth: source.naturalWidth,
+    };
+  });
+  expect(sourceGeometry.naturalWidth).toBe(1188);
+  expect(sourceGeometry.naturalHeight).toBe(1168);
+  expect(logoGeometry.renderedWidth / logoGeometry.renderedHeight).toBeCloseTo(
+    1188 / 1168,
+    2,
+  );
   await page.getByRole("button", { name: "Fixture" }).click();
   await page.getByRole("button", { name }).click();
   await page.getByRole("button", { name: "Run preflight" }).click();

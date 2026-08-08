@@ -10,7 +10,7 @@ Decision owner: Maintainer
 [ADR 0002](./0002-preflight-report-v0-1-implementation-values.md) fix the
 PreflightReport v0.1 evidence boundary, exact serialized values, and mandatory
 STOP invariants. Before implementation begins for
-[#6](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/6), the Decision
+[#6](https://github.com/OriginShift/AnteSig/issues/6), the Decision
 Engine needs one equally exact contract for its module ownership, input and
 output boundary, STOP reason codes, source references, deterministic ordering,
 and acceptance tests.
@@ -24,7 +24,7 @@ reach policy evaluation.
 
 This ADR separates runtime input validation from decision evaluation. It does
 not use the current implementation of
-[PR #15](https://github.com/Moss-Mini-Demo/moss-mini-demo/pull/15) as a
+[PR #15](https://github.com/OriginShift/AnteSig/pull/15) as a
 contract source. PR #15 is only a delivery dependency: the implementation of
 #6 cannot begin until the accepted report-schema implementation has merged.
 
@@ -428,10 +428,10 @@ before the Maintainer performs the Merge Gate.
 
 - [ADR 0001: PreflightReport v0.1 Schema Contract](./0001-preflight-report-v0-1-schema-contract.md)
 - [ADR 0002: PreflightReport v0.1 Implementation Values](./0002-preflight-report-v0-1-implementation-values.md)
-- [#4 M1 Evidence Contract Delivery Tracker](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/4)
-- [#5 PreflightReport v0.1 runtime schema](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/5)
-- [#6 Decision Engine](https://github.com/Moss-Mini-Demo/moss-mini-demo/issues/6)
-- [PR #15 report-schema implementation dependency](https://github.com/Moss-Mini-Demo/moss-mini-demo/pull/15)
+- [#4 M1 Evidence Contract Delivery Tracker](https://github.com/OriginShift/AnteSig/issues/4)
+- [#5 PreflightReport v0.1 runtime schema](https://github.com/OriginShift/AnteSig/issues/5)
+- [#6 Decision Engine](https://github.com/OriginShift/AnteSig/issues/6)
+- [PR #15 report-schema implementation dependency](https://github.com/OriginShift/AnteSig/pull/15)
 
 This ADR authorizes no implementation by itself. Authorization, dependency,
 assignee, labels, and Project state are recorded separately on #6 after this

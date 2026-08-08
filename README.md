@@ -1,13 +1,14 @@
-# Moss-Mini Demo
+# AnteSig
 
-Moss-Mini Demo is a planned preflight evidence console for people who need to
+AnteSig is a preflight evidence console for people who need to
 inspect an AI agent's intended Monad operation before any wallet review. The
-target product will organize user intent, protocol quotes, a Moss Capability
+product organizes user intent, protocol quotes, a Moss Capability
 Tree, simulation evidence, intent alignment, and a bounded decision into a
 report that a person can inspect.
 
-Moss is an underlying dependency and evidence-producing capability. It is not
-the name of this repository or the application itself.
+Moss is an underlying dependency and evidence-producing capability. AnteSig is
+the product name; the existing repository and package scope remain stable for
+technical compatibility.
 
 ## Current status
 
@@ -143,4 +144,4 @@ pull request.
 
 ## License
 
-Moss-Mini Demo is licensed under the [MIT License](LICENSE).
+AnteSig is licensed under the [MIT License](LICENSE).

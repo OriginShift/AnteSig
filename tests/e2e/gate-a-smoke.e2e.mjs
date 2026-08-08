@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
 const EXPECTED_LIVE_UNAVAILABLE_DIAGNOSTIC =
-  "Failed to load resource: the server responded with a status of 503 (Service Unavailable)";
+  /^Failed to load resource: the server responded with a status of 503 \((?:Service Unavailable)?\)$/;
 
 const pageErrors = new WeakMap();
 
@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   page.on("console", (message) => {
     if (
       message.type() === "error" &&
-      message.text() !== EXPECTED_LIVE_UNAVAILABLE_DIAGNOSTIC
+      !EXPECTED_LIVE_UNAVAILABLE_DIAGNOSTIC.test(message.text())
     ) {
       errors.push(`console: ${message.text()}`);
     }
