@@ -55,3 +55,4 @@ ADRs must be linked from the relevant Issue and pull request.
 | [0002](./0002-preflight-report-v0-1-implementation-values.md) | Accepted | PreflightReport v0.1 implementation values |
 | [0003](./0003-decision-engine-v0-1-contract.md) | Accepted | Decision Engine v0.1 implementation contract |
 | [0004](./0004-decision-input-and-stop-reason-correction.md) | Accepted | DecisionInput and STOP reason correction |
+| [0005](./0005-clear402-monad-action-credential-v0-1.md) | Accepted | Clear402 Monad Action Credential v0.1 boundary |
