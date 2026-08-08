@@ -1,19 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { PreflightClientError, requestPreflight } from "../client/api-client";
+import {
+  EMPTY_INTENT_DRAFT,
+  type IntentDraft,
+  type IntentErrors,
+  validateIntentDraft,
+} from "../client/intent-form";
+import {
+  createFixtureRequest,
+  type RunnableFixtureScenario,
+  type WorkbenchMode,
+} from "../client/run-controls";
 import {
   INITIAL_RUN_STATE,
   type RunProblem,
   reduceRunState,
 } from "../client/run-state";
 import type { PreflightRequest } from "../contracts/preflight";
-
-const SAMPLE_REQUEST = {
-  contractVersion: "0.1",
-  mode: "FIXTURE",
-  scenario: "manual-review-success",
-} as const satisfies PreflightRequest;
+import { IntentForm } from "./intent-form";
+import { ProvenanceBadge } from "./provenance-badge";
+import { QuoteComparison } from "./quote-comparison";
+import { RunControls } from "./run-controls";
 
 function stateDescription(status: string): string {
   switch (status) {
@@ -28,12 +37,26 @@ function stateDescription(status: string): string {
   }
 }
 
+function reportAsset(
+  asset: { kind: "NATIVE" } | { kind: "ERC20"; address: string },
+) {
+  return asset.kind === "NATIVE" ? "NATIVE (no token address)" : asset.address;
+}
+
 export function WorkbenchShell() {
   const [state, dispatch] = useReducer(reduceRunState, INITIAL_RUN_STATE);
+  const [mode, setMode] = useState<WorkbenchMode>("LIVE");
+  const [intentDraft, setIntentDraft] =
+    useState<IntentDraft>(EMPTY_INTENT_DRAFT);
+  const [intentErrors, setIntentErrors] = useState<IntentErrors>({});
+  const [fixtureScenario, setFixtureScenario] = useState<
+    RunnableFixtureScenario | undefined
+  >(undefined);
   const activeRun = useRef<
     { controller: AbortController; token: number } | undefined
   >(undefined);
   const nextToken = useRef(0);
+  const controlPane = useRef<HTMLElement>(null);
   const resultRegion = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -52,13 +75,32 @@ export function WorkbenchShell() {
   const runPreflight = useCallback(async () => {
     if (activeRun.current) return;
 
+    let request: PreflightRequest | undefined;
+    if (mode === "LIVE") {
+      const validation = validateIntentDraft(intentDraft);
+      if (!validation.ok) {
+        setIntentErrors(validation.errors);
+        requestAnimationFrame(() => {
+          controlPane.current
+            ?.querySelector<HTMLInputElement>('input[aria-invalid="true"]')
+            ?.focus();
+        });
+        return;
+      }
+      setIntentErrors({});
+      request = validation.request;
+    } else {
+      request = createFixtureRequest(fixtureScenario);
+      if (request === undefined) return;
+    }
+
     const token = ++nextToken.current;
     const controller = new AbortController();
     activeRun.current = { controller, token };
     dispatch({ type: "START", token, startedAt: Date.now() });
 
     try {
-      const response = await requestPreflight(SAMPLE_REQUEST, {
+      const response = await requestPreflight(request, {
         signal: controller.signal,
       });
       if (response.ok) {
@@ -98,7 +140,7 @@ export function WorkbenchShell() {
     } finally {
       if (activeRun.current?.token === token) activeRun.current = undefined;
     }
-  }, []);
+  }, [fixtureScenario, intentDraft, mode]);
 
   const cancelRun = useCallback(() => {
     const active = activeRun.current;
@@ -117,6 +159,20 @@ export function WorkbenchShell() {
     activeRun.current = undefined;
   }, []);
 
+  const changeMode = useCallback((nextMode: WorkbenchMode) => {
+    setMode(nextMode);
+    setIntentErrors({});
+    setFixtureScenario(undefined);
+    dispatch({ type: "RESET" });
+  }, []);
+
+  const loadFixture = useCallback((scenario: RunnableFixtureScenario) => {
+    setFixtureScenario(scenario);
+    dispatch({ type: "RESET" });
+  }, []);
+
+  const report = state.status === "RESULT" ? state.response.report : undefined;
+
   return (
     <div className="workbench-shell">
       <header className="app-bar">
@@ -125,7 +181,9 @@ export function WorkbenchShell() {
           <span className="brand-surface">Preflight workbench</span>
         </div>
         <ul aria-label="Environment" className="environment-list">
-          <li className="environment-item">Network: awaiting run</li>
+          <li className="environment-item">
+            Network: {report?.network ?? "awaiting run"}
+          </li>
           <li className="environment-item">Optional profile: disabled</li>
         </ul>
       </header>
@@ -133,8 +191,8 @@ export function WorkbenchShell() {
       <main className="workbench-main">
         <div className="workbench-heading">
           <div>
-            <h1>Preflight workbench</h1>
-            <p>Run state and strict API response boundary</p>
+            <h1>Exact-input Swap preflight</h1>
+            <p>Structured intent, protocol quotes and evidence provenance</p>
           </div>
           <span className={`state-badge ${state.status.toLowerCase()}`}>
             {state.status}
@@ -142,50 +200,53 @@ export function WorkbenchShell() {
         </div>
 
         <div className="workbench-grid">
-          <section className="control-pane" aria-labelledby="request-heading">
+          <section
+            className="control-pane"
+            aria-labelledby="request-heading"
+            ref={controlPane}
+          >
             <div className="pane-heading">
               <h2 id="request-heading">Run input</h2>
-              <p>Synthetic development request</p>
+              <p>Contract v0.1 · /api/preflight</p>
             </div>
-            <dl className="request-facts">
-              <div>
-                <dt>Mode</dt>
-                <dd>Fixture</dd>
-              </div>
-              <div>
-                <dt>Scenario</dt>
-                <dd>manual-review-success</dd>
-              </div>
-              <div>
-                <dt>Contract</dt>
-                <dd>Preflight v0.1</dd>
-              </div>
-              <div>
-                <dt>Endpoint</dt>
-                <dd>/api/preflight</dd>
-              </div>
-            </dl>
-            <div className="run-actions">
-              <button
-                className="command-button primary"
+
+            <RunControls
+              canRun={mode === "LIVE" || fixtureScenario !== undefined}
+              fixtureScenario={fixtureScenario}
+              mode={mode}
+              onCancel={cancelRun}
+              onLoadFixture={loadFixture}
+              onModeChange={changeMode}
+              onRun={runPreflight}
+              running={state.status === "RUNNING"}
+            />
+
+            {mode === "LIVE" ? (
+              <IntentForm
                 disabled={state.status === "RUNNING"}
-                onClick={runPreflight}
-                type="button"
-              >
-                {state.status === "RUNNING"
-                  ? "Running preflight"
-                  : "Run preflight"}
-              </button>
-              {state.status === "RUNNING" ? (
-                <button
-                  className="command-button secondary"
-                  onClick={cancelRun}
-                  type="button"
-                >
-                  Cancel run
-                </button>
-              ) : null}
-            </div>
+                draft={intentDraft}
+                errors={intentErrors}
+                onChange={(draft) => {
+                  setIntentDraft(draft);
+                  setIntentErrors({});
+                }}
+              />
+            ) : (
+              <dl className="fixture-request-facts">
+                <div>
+                  <dt>Request mode</dt>
+                  <dd>FIXTURE</dd>
+                </div>
+                <div>
+                  <dt>Scenario</dt>
+                  <dd>{fixtureScenario ?? "not loaded"}</dd>
+                </div>
+                <div>
+                  <dt>Payload boundary</dt>
+                  <dd>Fixed enum request</dd>
+                </div>
+              </dl>
+            )}
           </section>
 
           <section className="result-pane" aria-labelledby="result-heading">
@@ -194,11 +255,11 @@ export function WorkbenchShell() {
                 <h2 id="result-heading">Run result</h2>
                 <p>{stateDescription(state.status)}</p>
               </div>
-              {state.status === "RESULT" ? (
-                <span className="provenance-badge">
-                  {state.response.report.provenance}
-                </span>
-              ) : null}
+              <ProvenanceBadge
+                fixtureLoaded={fixtureScenario !== undefined}
+                mode={mode}
+                provenance={report?.provenance}
+              />
             </div>
 
             <section
@@ -210,9 +271,9 @@ export function WorkbenchShell() {
             >
               {state.status === "IDLE" ? (
                 <div className="empty-state">
-                  <h3>No run selected</h3>
+                  <h3>No result</h3>
                   <p>
-                    Result identifiers and bounded Decision output appear here.
+                    Run identifiers and bounded Decision output appear here.
                   </p>
                 </div>
               ) : null}
@@ -242,6 +303,7 @@ export function WorkbenchShell() {
                       {state.response.report.decision.status}
                     </span>
                   </div>
+
                   <dl className="result-facts">
                     <div>
                       <dt>Run ID</dt>
@@ -259,11 +321,69 @@ export function WorkbenchShell() {
                       <dt>Network</dt>
                       <dd>{state.response.report.network}</dd>
                     </div>
-                    <div>
-                      <dt>Limitations</dt>
-                      <dd>{state.response.report.limitations.length}</dd>
-                    </div>
                   </dl>
+
+                  <section
+                    className="report-intent"
+                    aria-labelledby="intent-heading"
+                  >
+                    <div className="section-heading">
+                      <div>
+                        <h3 id="intent-heading">Report intent</h3>
+                        <p>Server-validated contract values</p>
+                      </div>
+                    </div>
+                    <dl className="report-intent-facts">
+                      <div>
+                        <dt>Account</dt>
+                        <dd>{state.response.report.intent.account}</dd>
+                      </div>
+                      <div>
+                        <dt>Input asset</dt>
+                        <dd>
+                          {reportAsset(state.response.report.intent.inputAsset)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Output token</dt>
+                        <dd>
+                          {reportAsset(
+                            state.response.report.intent.outputAsset,
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Amount in</dt>
+                        <dd>{state.response.report.intent.inputAmount}</dd>
+                      </div>
+                      <div>
+                        <dt>Slippage</dt>
+                        <dd>
+                          {state.response.report.intent.maxSlippageBps} bps
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Allowlist</dt>
+                        <dd>
+                          {state.response.report.intent.allowedProtocols.join(
+                            ", ",
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Recipient</dt>
+                        <dd>
+                          {state.response.report.intent.recipient ??
+                            "account default"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </section>
+
+                  <QuoteComparison
+                    quotes={state.response.report.quotes}
+                    selection={state.response.report.selection}
+                  />
                 </div>
               ) : null}
 
