@@ -19,7 +19,7 @@ import {
   type RunProblem,
   reduceRunState,
 } from "../client/run-state";
-import type { PreflightRequest } from "../contracts/preflight";
+import type { PreflightRequest, RunId } from "../contracts/preflight";
 import { AlignmentList } from "./alignment-list";
 import { CapabilityInspector } from "./capability-inspector";
 import { ComparisonStrip } from "./comparison-strip";
@@ -51,6 +51,63 @@ function reportAsset(
   return asset.kind === "NATIVE" ? "NATIVE (no token address)" : asset.address;
 }
 
+type LiveRecovery = Readonly<{
+  code: string;
+  message: string;
+  runId?: RunId;
+}>;
+
+function LiveRecoveryAudit({
+  recoveredRunId,
+  recovery,
+}: Readonly<{
+  recoveredRunId?: RunId;
+  recovery: LiveRecovery;
+}>) {
+  return (
+    <section
+      aria-labelledby="recovery-heading"
+      className={`recovery-audit ${recoveredRunId ? "complete" : "pending"}`}
+    >
+      <span className="recovery-eyebrow">Explicit recovery</span>
+      <h3 id="recovery-heading">Live failure retained</h3>
+      <p>
+        {recovery.code}: {recovery.message}
+      </p>
+      <dl className="recovery-facts">
+        <div>
+          <dt>Failed source</dt>
+          <dd>LIVE</dd>
+        </div>
+        <div>
+          <dt>Failed run ID</dt>
+          <dd data-run-id={recovery.runId ? "true" : undefined}>
+            {recovery.runId ?? "not returned by the server"}
+          </dd>
+        </div>
+        <div>
+          <dt>Recovery source</dt>
+          <dd>{recoveredRunId ? "FIXTURE" : "awaiting Fixture run"}</dd>
+        </div>
+        <div>
+          <dt>Recovery run ID</dt>
+          <dd data-run-id={recoveredRunId ? "true" : undefined}>
+            {recoveredRunId ?? "not created"}
+          </dd>
+        </div>
+        <div>
+          <dt>Recovery state</dt>
+          <dd>{recoveredRunId ? "COMPLETE" : "PENDING"}</dd>
+        </div>
+        <div>
+          <dt>Evidence reuse</dt>
+          <dd>NONE</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
 export function WorkbenchShell({
   clear402Enabled,
 }: Readonly<{ clear402Enabled: boolean }>) {
@@ -62,6 +119,7 @@ export function WorkbenchShell({
   const [fixtureScenario, setFixtureScenario] = useState<
     RunnableFixtureScenario | undefined
   >(undefined);
+  const [liveRecovery, setLiveRecovery] = useState<LiveRecovery | undefined>();
   const activeRun = useRef<
     { controller: AbortController; token: number } | undefined
   >(undefined);
@@ -103,6 +161,7 @@ export function WorkbenchShell({
       request = createFixtureRequest(fixtureScenario);
       if (request === undefined) return;
     }
+    const requestMode = request.mode;
 
     const token = ++nextToken.current;
     const controller = new AbortController();
@@ -114,6 +173,7 @@ export function WorkbenchShell({
         signal: controller.signal,
       });
       if (response.ok) {
+        if (response.mode === "LIVE") setLiveRecovery(undefined);
         dispatch({
           type: "RESOLVE",
           token,
@@ -129,17 +189,25 @@ export function WorkbenchShell({
             kind: "API",
             code: response.error.code,
             message: response.error.message,
+            mode: requestMode,
+            runId: response.runId,
           },
         });
       }
     } catch (error) {
       const problem: RunProblem =
         error instanceof PreflightClientError
-          ? { kind: error.kind, code: error.kind, message: error.message }
+          ? {
+              kind: error.kind,
+              code: error.kind,
+              message: error.message,
+              mode: requestMode,
+            }
           : {
               kind: "NETWORK",
               code: "NETWORK",
               message: "The preflight service could not be reached.",
+              mode: requestMode,
             };
       dispatch({
         type: "REJECT",
@@ -164,17 +232,35 @@ export function WorkbenchShell({
         kind: "ABORTED",
         code: "ABORTED",
         message: "The preflight request was cancelled.",
+        mode,
       },
     });
     activeRun.current = undefined;
-  }, []);
+  }, [mode]);
 
-  const changeMode = useCallback((nextMode: WorkbenchMode) => {
-    setMode(nextMode);
-    setIntentErrors({});
-    setFixtureScenario(undefined);
-    dispatch({ type: "RESET" });
-  }, []);
+  const changeMode = useCallback(
+    (nextMode: WorkbenchMode) => {
+      if (nextMode === mode) return;
+      if (
+        nextMode === "FIXTURE" &&
+        state.status === "ERROR" &&
+        state.problem.mode === "LIVE"
+      ) {
+        setLiveRecovery({
+          code: state.problem.code,
+          message: state.problem.message,
+          runId: state.problem.runId,
+        });
+      } else {
+        setLiveRecovery(undefined);
+      }
+      setMode(nextMode);
+      setIntentErrors({});
+      setFixtureScenario(undefined);
+      dispatch({ type: "RESET" });
+    },
+    [mode, state],
+  );
 
   const loadFixture = useCallback((scenario: RunnableFixtureScenario) => {
     setFixtureScenario(scenario);
@@ -185,6 +271,12 @@ export function WorkbenchShell({
   const credentialExtension =
     state.status === "RESULT" && clear402Enabled && "clear402" in state.response
       ? state.response.clear402
+      : undefined;
+  const recoveredRunId =
+    liveRecovery &&
+    state.status === "RESULT" &&
+    state.response.mode === "FIXTURE"
+      ? state.response.runId
       : undefined;
 
   return (
@@ -297,6 +389,13 @@ export function WorkbenchShell({
               ref={resultRegion}
               tabIndex={-1}
             >
+              {liveRecovery ? (
+                <LiveRecoveryAudit
+                  recoveredRunId={recoveredRunId}
+                  recovery={liveRecovery}
+                />
+              ) : null}
+
               {state.status === "IDLE" ? (
                 <div className="empty-state">
                   <h3>No result</h3>
@@ -342,7 +441,7 @@ export function WorkbenchShell({
                   <dl className="result-facts">
                     <div>
                       <dt>Run ID</dt>
-                      <dd>{state.response.runId}</dd>
+                      <dd data-run-id="true">{state.response.runId}</dd>
                     </div>
                     <div>
                       <dt>Report ID</dt>
@@ -351,6 +450,10 @@ export function WorkbenchShell({
                     <div>
                       <dt>Mode</dt>
                       <dd>{state.response.mode}</dd>
+                    </div>
+                    <div>
+                      <dt>Provenance</dt>
+                      <dd>{state.response.report.provenance}</dd>
                     </div>
                     <div>
                       <dt>Network</dt>
@@ -423,9 +526,11 @@ export function WorkbenchShell({
                   <CapabilityInspector
                     capability={state.response.report.capability}
                     limitations={state.response.report.limitations}
+                    provenance={state.response.report.provenance}
                   />
 
                   <EvidenceTimeline
+                    provenance={state.response.report.provenance}
                     simulation={state.response.report.simulation}
                   />
                 </div>
@@ -436,13 +541,38 @@ export function WorkbenchShell({
                   <span className="error-code">{state.problem.code}</span>
                   <h3>Run unavailable</h3>
                   <p>{state.problem.message}</p>
-                  <button
-                    className="command-button secondary"
-                    onClick={runPreflight}
-                    type="button"
-                  >
-                    Retry preflight
-                  </button>
+                  <dl className="error-run-facts">
+                    <div>
+                      <dt>Request mode</dt>
+                      <dd>{state.problem.mode}</dd>
+                    </div>
+                    <div>
+                      <dt>Failed run ID</dt>
+                      <dd
+                        data-run-id={state.problem.runId ? "true" : undefined}
+                      >
+                        {state.problem.runId ?? "not returned by the server"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="error-actions">
+                    <button
+                      className="command-button secondary"
+                      onClick={runPreflight}
+                      type="button"
+                    >
+                      Retry preflight
+                    </button>
+                    {state.problem.mode === "LIVE" ? (
+                      <button
+                        className="command-button primary"
+                        onClick={() => changeMode("FIXTURE")}
+                        type="button"
+                      >
+                        Recover with Fixture
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
             </section>

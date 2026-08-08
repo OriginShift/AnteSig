@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
@@ -192,13 +192,12 @@ async function assertKeyboardDrawer(page: Page) {
 async function captureScreenshot(page: Page, filename: string) {
   if (!WRITE_SCREENSHOTS) return;
 
-  const runId = page
-    .locator(".result-facts > div")
-    .filter({ has: page.locator("dt", { hasText: "Run ID" }) })
-    .locator("dd");
-  await runId.evaluate((element) => {
-    element.textContent = "run_redacted-for-stable-qa";
-  });
+  const runIds = page.locator('[data-run-id="true"]');
+  for (let index = 0; index < (await runIds.count()); index += 1) {
+    await runIds.nth(index).evaluate((element) => {
+      element.textContent = "run_redacted-for-stable-qa";
+    });
+  }
   await page.screenshot({
     fullPage: true,
     path: resolve(SCREENSHOTS, filename),
@@ -327,6 +326,139 @@ test("disabled runtime keeps credential actions absent", async ({ page }) => {
     "Optional profile: disabled",
   );
   await assertNoOverflowOrOverlap(page);
+});
+
+test("provenance stays isolated through explicit Live failure fallback recovery", async ({
+  page,
+}) => {
+  const payloads: Array<Record<string, unknown>> = [];
+  page.on("request", (request) => {
+    if (
+      request.url().endsWith("/api/preflight") &&
+      request.method() === "POST"
+    ) {
+      payloads.push(request.postDataJSON() as Record<string, unknown>);
+    }
+  });
+
+  await page.setViewportSize(DESKTOP);
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page
+    .getByLabel("Account")
+    .fill("0x47833B74E85e2847125e5c3F20B59f6eD063985A");
+  await page
+    .getByLabel("Output token address")
+    .fill("0xFcd0DA3726376D618d88B4999Ca6030B18aA62aC");
+  await page.getByLabel("Amount in").fill("1000000000000000000");
+  await page.getByRole("button", { name: "Run preflight" }).click();
+
+  const errorState = page.locator(".error-state");
+  await expect(errorState).toContainText("LIVE_UNAVAILABLE");
+  await expect(errorState).toContainText("LIVE");
+  const liveRunId = await errorState
+    .locator(".error-run-facts > div")
+    .filter({ hasText: "Failed run ID" })
+    .locator("dd")
+    .textContent();
+  expect(liveRunId).toMatch(/^run_[0-9a-f-]{36}$/);
+  expect(payloads.map(({ mode }) => mode)).toEqual(["LIVE"]);
+  await expect(page.locator(".result-content, .fixture-picker")).toHaveCount(0);
+
+  const recoveryStartedAt = Date.now();
+  await page.getByRole("button", { name: "Recover with Fixture" }).click();
+  await expect(page.getByRole("button", { name: "Fixture" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const recovery = page.locator(".recovery-audit");
+  await expect(recovery).toContainText("Live failure retained");
+  await expect(recovery).toContainText("LIVE_UNAVAILABLE");
+  await expect(recovery).toContainText(liveRunId ?? "");
+  await expect(recovery).toContainText("awaiting Fixture run");
+  expect(payloads.map(({ mode }) => mode)).toEqual(["LIVE"]);
+
+  await page.getByRole("button", { name: "Happy path" }).click();
+  await page.getByRole("button", { name: "Run preflight" }).click();
+  await page.getByRole("heading", { name: "Three-way comparison" }).waitFor();
+  expect(Date.now() - recoveryStartedAt).toBeLessThanOrEqual(15_000);
+
+  const fixtureRunId = await page
+    .locator(".result-facts > div")
+    .filter({ hasText: "Run ID" })
+    .locator("dd")
+    .textContent();
+  expect(fixtureRunId).toMatch(/^run_[0-9a-f-]{36}$/);
+  expect(fixtureRunId).not.toBe(liveRunId);
+  expect(payloads.map(({ mode }) => mode)).toEqual(["LIVE", "FIXTURE"]);
+  await expect(page.locator(".provenance-value")).toHaveText("FIXTURE");
+  await expect(
+    page
+      .locator(".result-facts > div")
+      .filter({ hasText: "Provenance" })
+      .locator("dd"),
+  ).toHaveText("FIXTURE");
+  await expect(recovery).toContainText("Recovery sourceFIXTURE");
+  await expect(recovery).toContainText(fixtureRunId ?? "");
+  await expect(recovery).toContainText("Recovery stateCOMPLETE");
+  await expect(recovery).toContainText("Evidence reuseNONE");
+
+  await page
+    .locator(".capability-inspector")
+    .getByRole("button", { name: "View raw JSON" })
+    .click();
+  const rawDialog = page.getByRole("dialog", { name: "Capability evidence" });
+  await expect(rawDialog.locator(".raw-drawer-provenance")).toHaveText(
+    "Source: FIXTURE",
+  );
+  const rawArtifact = JSON.parse(
+    await rawDialog.getByLabel("Capability evidence raw JSON").inputValue(),
+  ) as Record<string, unknown>;
+  expect(rawArtifact).toMatchObject({
+    provenance: "FIXTURE",
+    capability: { availability: "AVAILABLE" },
+  });
+  const rawDownloadPromise = page.waitForEvent("download");
+  await rawDialog.getByRole("button", { name: "Download JSON" }).click();
+  const rawDownload = await rawDownloadPromise;
+  expect(rawDownload.suggestedFilename()).toBe(
+    "antesig-fixture-capability-evidence.json",
+  );
+  const rawDownloadPath = await rawDownload.path();
+  expect(rawDownloadPath).not.toBeNull();
+  expect(
+    JSON.parse(await readFile(rawDownloadPath ?? "", "utf8")),
+  ).toMatchObject({ provenance: "FIXTURE" });
+  await page.keyboard.press("Escape");
+
+  if (process.env.CLEAR402_ENABLED === "true") {
+    const credentialPanel = page.locator(".credential-actions");
+    await expect(credentialPanel).toContainText("ProvenanceFIXTURE");
+    const reportId = await page
+      .locator(".result-facts > div")
+      .filter({ hasText: "Report ID" })
+      .locator("dd")
+      .textContent();
+    const credentialDownloadPromise = page.waitForEvent("download");
+    await credentialPanel
+      .getByRole("button", { name: "Export credential" })
+      .click();
+    const credentialDownload = await credentialDownloadPromise;
+    const credentialDownloadPath = await credentialDownload.path();
+    expect(credentialDownloadPath).not.toBeNull();
+    expect(
+      JSON.parse(await readFile(credentialDownloadPath ?? "", "utf8")),
+    ).toMatchObject({
+      report: { provenance: "FIXTURE", reportId },
+    });
+  }
+
+  await assertNoOverflowOrOverlap(page);
+  await captureScreenshot(
+    page,
+    process.env.CLEAR402_ENABLED === "true"
+      ? "recovery-desktop-clear402.png"
+      : "recovery-desktop-baseline.png",
+  );
 });
 
 test.describe("Clear402 credential actions", () => {

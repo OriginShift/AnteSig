@@ -77,9 +77,17 @@ describe("run state", () => {
           type: "REJECT",
           token: 1,
           completedAt: 120,
-          problem: { kind, code: kind, message: `${kind} message` },
+          problem: {
+            kind,
+            code: kind,
+            message: `${kind} message`,
+            mode: "LIVE",
+          },
         }),
-      ).toMatchObject({ status: "ERROR", problem: { kind } });
+      ).toMatchObject({
+        status: "ERROR",
+        problem: { kind, mode: "LIVE" },
+      });
     }
   });
 
@@ -98,9 +106,38 @@ describe("run state", () => {
         type: "REJECT",
         token: 1,
         completedAt: 120,
-        problem: { kind: "NETWORK", code: "NETWORK", message: "Network" },
+        problem: {
+          kind: "NETWORK",
+          code: "NETWORK",
+          message: "Network",
+          mode: "LIVE",
+        },
       }),
     ).toBe(state);
+  });
+
+  it("retains the failed mode and server runId for an explicit recovery", () => {
+    expect(
+      reduceRunState(running(), {
+        type: "REJECT",
+        token: 1,
+        completedAt: 120,
+        problem: {
+          kind: "API",
+          code: "LIVE_UNAVAILABLE",
+          message: "Live preflight is unavailable.",
+          mode: "LIVE",
+          runId: "run_018f4ca2-7a44-4b81-9d7d-a6d4508cf21e",
+        },
+      }),
+    ).toMatchObject({
+      status: "ERROR",
+      problem: {
+        code: "LIVE_UNAVAILABLE",
+        mode: "LIVE",
+        runId: "run_018f4ca2-7a44-4b81-9d7d-a6d4508cf21e",
+      },
+    });
   });
 
   it("supersedes a run before accepting the newest response", () => {

@@ -2,11 +2,15 @@ import type {
   PreflightClientErrorKind,
   PreflightClientSuccessResponse,
 } from "./api-client";
+import type { WorkbenchMode } from "./run-controls";
+import type { RunId } from "../contracts/preflight";
 
 export type RunProblem = {
   kind: PreflightClientErrorKind | "API";
   code: string;
   message: string;
+  mode: WorkbenchMode;
+  runId?: RunId;
 };
 
 export type RunState =
