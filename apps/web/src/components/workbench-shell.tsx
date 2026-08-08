@@ -19,6 +19,8 @@ import {
   reduceRunState,
 } from "../client/run-state";
 import type { PreflightRequest } from "../contracts/preflight";
+import { CapabilityInspector } from "./capability-inspector";
+import { EvidenceTimeline } from "./evidence-timeline";
 import { IntentForm } from "./intent-form";
 import { ProvenanceBadge } from "./provenance-badge";
 import { QuoteComparison } from "./quote-comparison";
@@ -383,6 +385,15 @@ export function WorkbenchShell() {
                   <QuoteComparison
                     quotes={state.response.report.quotes}
                     selection={state.response.report.selection}
+                  />
+
+                  <CapabilityInspector
+                    capability={state.response.report.capability}
+                    limitations={state.response.report.limitations}
+                  />
+
+                  <EvidenceTimeline
+                    simulation={state.response.report.simulation}
                   />
                 </div>
               ) : null}
