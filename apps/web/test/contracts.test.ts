@@ -1,5 +1,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  type PreflightReport,
+  PreflightReportSchema,
+} from "@moss-mini-demo/report-schema";
 import { describe, expect, it } from "vitest";
 import { HealthResponseSchema } from "../src/contracts/health";
 import {
@@ -15,16 +19,43 @@ import {
 
 const RUN_ID = "run_018f4ca2-7a44-4b81-9d7d-a6d4508cf21e";
 
-function readManualReviewFixture(): Record<string, unknown> {
-  return JSON.parse(
-    readFileSync(
-      resolve(
-        process.cwd(),
-        "packages/report-schema/fixtures/manual-review-success.v0.1.json",
+function readManualReviewFixture(): PreflightReport {
+  return PreflightReportSchema.parse(
+    JSON.parse(
+      readFileSync(
+        resolve(
+          process.cwd(),
+          "packages/report-schema/fixtures/manual-review-success.v0.1.json",
+        ),
+        "utf8",
       ),
-      "utf8",
     ),
   );
+}
+
+function presentation(report: PreflightReport) {
+  const decision =
+    report.decision.status === "MANUAL_REVIEW"
+      ? { status: "MANUAL_REVIEW" }
+      : {
+          status: "STOP",
+          heading: "STOP",
+          actionBoundary: "DO_NOT_PROCEED_TO_SIGNER",
+          reasons: report.decision.reasons.map((reason) => ({
+            code: reason.code,
+            explanation: "Contract-test explanation.",
+            sourceReferences: reason.sourceReferences,
+          })),
+        };
+  return {
+    schemaVersion: "0.1",
+    reportId: report.reportId,
+    decision,
+    sourceContextReferences: [],
+    limitationReferences: report.limitations.map(
+      (_limitation, index) => `/limitations/${index}`,
+    ),
+  };
 }
 
 describe("preflight contracts", () => {
@@ -127,6 +158,7 @@ describe("preflight contracts", () => {
       mode: "FIXTURE",
       scenario: "manual-review-success",
       report: fixture,
+      presentation: presentation(fixture),
     };
     expect(FixturePreflightSuccessSchema.safeParse(response).success).toBe(
       true,
@@ -145,6 +177,7 @@ describe("preflight contracts", () => {
       ok: true,
       runId: RUN_ID,
       mode: "LIVE",
+      presentation: presentation(fixture),
     };
     for (const provenance of ["LIVE_SOURCE", "LOCAL_FORK"]) {
       expect(
@@ -178,6 +211,43 @@ describe("preflight contracts", () => {
       PreflightErrorResponseSchema.safeParse({
         ...error,
         error: { ...error.error, message: "x".repeat(257) },
+      }).success,
+    ).toBe(false);
+    expect(
+      PreflightErrorResponseSchema.safeParse({
+        ...error,
+        error: {
+          code: "PREFLIGHT_TIMEOUT",
+          message: "The preflight request exceeded its hard deadline.",
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("requires a strict presentation correlated to its report", () => {
+    const response = {
+      contractVersion: "0.1",
+      ok: true,
+      runId: RUN_ID,
+      mode: "FIXTURE",
+      scenario: "manual-review-success",
+      report: fixture,
+      presentation: presentation(fixture),
+    };
+    expect(PreflightResponseSchema.safeParse(response).success).toBe(true);
+    expect(
+      PreflightResponseSchema.safeParse({
+        ...response,
+        presentation: {
+          ...response.presentation,
+          reportId: "88888888-8888-4888-8888-888888888888",
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      PreflightResponseSchema.safeParse({
+        ...response,
+        presentation: { ...response.presentation, extra: true },
       }).success,
     ).toBe(false);
   });

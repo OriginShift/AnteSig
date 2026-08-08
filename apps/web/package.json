@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "next dev",
     "start": "next start",
-    "build": "pnpm --filter @moss-mini-demo/report-schema build && next build",
-    "typecheck": "pnpm --filter @moss-mini-demo/report-schema build && tsc --noEmit"
+    "build": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && next build",
+    "typecheck": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && tsc --noEmit"
   },
   "dependencies": {
+    "@moss-mini-demo/moss-adapter": "workspace:*",
+    "@moss-mini-demo/preflight-core": "workspace:*",
     "@moss-mini-demo/report-schema": "workspace:*",
     "next": "16.2.12",
     "react": "19.2.3",

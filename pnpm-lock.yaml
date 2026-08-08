@@ -27,6 +27,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@moss-mini-demo/moss-adapter':
+        specifier: workspace:*
+        version: link:../../packages/moss-adapter
+      '@moss-mini-demo/preflight-core':
+        specifier: workspace:*
+        version: link:../../packages/preflight-core
       '@moss-mini-demo/report-schema':
         specifier: workspace:*
         version: link:../../packages/report-schema
