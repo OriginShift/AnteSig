@@ -1,0 +1,19 @@
+{
+  "bundleVersion": "0.1",
+  "sourceBoundary": "FIXTURE",
+  "scenario": "amount-mismatch",
+  "intent": {
+    "account": "0x5555555555555555555555555555555555555555",
+    "inputAsset": {
+      "kind": "NATIVE"
+    },
+    "outputAsset": {
+      "kind": "ERC20",
+      "address": "0x7777777777777777777777777777777777777777"
+    },
+    "inputAmount": "1000000000000000000",
+    "maxSlippageBps": 50,
+    "allowedProtocols": ["synthetic-amount-in-mismatch-protocol"],
+    "recipient": "0x6666666666666666666666666666666666666666"
+  }
+}

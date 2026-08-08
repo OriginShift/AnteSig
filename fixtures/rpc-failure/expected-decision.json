@@ -1,0 +1,9 @@
+{
+  "status": "STOP",
+  "reasons": [
+    {
+      "code": "SIMULATION_ACQUISITION_FAILED",
+      "sourceReferences": ["/simulation/availability"]
+    }
+  ]
+}

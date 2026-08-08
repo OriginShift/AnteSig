@@ -1,0 +1,19 @@
+{
+  "bundleVersion": "0.1",
+  "sourceBoundary": "FIXTURE",
+  "scenario": "happy-path",
+  "intent": {
+    "account": "0x47833B74E85e2847125e5c3F20B59f6eD063985A",
+    "inputAsset": {
+      "kind": "NATIVE"
+    },
+    "outputAsset": {
+      "kind": "ERC20",
+      "address": "0xFcd0DA3726376D618d88B4999Ca6030B18aA62aC"
+    },
+    "inputAmount": "1000000000000000",
+    "maxSlippageBps": 50,
+    "allowedProtocols": ["synthetic-fixture-protocol"],
+    "recipient": "0xD468b6928b92D983F6C6CB9382B438E13D999e3d"
+  }
+}

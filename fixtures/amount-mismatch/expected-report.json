@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "0.1",
+  "reportId": "99999999-9999-4999-8999-999999999999",
+  "generatedAt": "2031-05-06T07:08:09.000Z",
+  "network": "eip155:99999999999999999999999999999999",
+  "provenance": "FIXTURE",
+  "intent": {
+    "account": "0x5555555555555555555555555555555555555555",
+    "inputAsset": {
+      "kind": "NATIVE"
+    },
+    "outputAsset": {
+      "kind": "ERC20",
+      "address": "0x7777777777777777777777777777777777777777"
+    },
+    "inputAmount": "1000000000000000000",
+    "maxSlippageBps": 50,
+    "allowedProtocols": ["synthetic-amount-in-mismatch-protocol"],
+    "recipient": "0x6666666666666666666666666666666666666666"
+  },
+  "quotes": [
+    {
+      "quoteId": "synthetic-amount-in-mismatch-quote-v0-1",
+      "protocolId": "synthetic-amount-in-mismatch-protocol",
+      "inputAsset": {
+        "kind": "NATIVE"
+      },
+      "outputAsset": {
+        "kind": "ERC20",
+        "address": "0x7777777777777777777777777777777777777777"
+      },
+      "inputAmount": "1000000000000000000",
+      "status": "SUCCESS",
+      "outputAmount": "42000000",
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "quoteEvidence": "not-a-protocol-quote"
+      }
+    }
+  ],
+  "selection": {
+    "status": "SELECTED",
+    "protocolId": "synthetic-amount-in-mismatch-protocol",
+    "quoteId": "synthetic-amount-in-mismatch-quote-v0-1",
+    "reason": {
+      "code": "SYNTHETIC_SELECTED_SUCCESS_QUOTE",
+      "sourceReferences": ["/quotes/0"]
+    }
+  },
+  "capability": {
+    "availability": "AVAILABLE",
+    "raw": {
+      "origin": "synthetic-development-fixture",
+      "capabilityEvidence": "not-a-moss-capability",
+      "amountIn": "10000000000000000000"
+    }
+  },
+  "simulation": {
+    "availability": "AVAILABLE",
+    "executionStatus": "SUCCESS",
+    "raw": {
+      "origin": "synthetic-development-fixture",
+      "simulationEvidence": "not-a-monad-simulation"
+    },
+    "receipts": {
+      "availability": "AVAILABLE",
+      "items": [
+        {
+          "status": "SUCCESS",
+          "raw": {
+            "origin": "synthetic-development-fixture",
+            "receiptEvidence": "not-a-chain-receipt"
+          }
+        }
+      ]
+    },
+    "outcomes": {
+      "availability": "AVAILABLE",
+      "items": [
+        {
+          "status": "SUCCESS",
+          "raw": {
+            "origin": "synthetic-development-fixture",
+            "outcomeEvidence": "not-a-chain-outcome",
+            "amountIn": "10000000000000000000"
+          }
+        }
+      ]
+    },
+    "warnings": {
+      "availability": "AVAILABLE",
+      "items": []
+    },
+    "coverage": {
+      "availability": "AVAILABLE",
+      "complete": true,
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "coverageEvidence": "synthetic-complete"
+      }
+    },
+    "ordering": {
+      "availability": "AVAILABLE",
+      "valid": true,
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "orderingEvidence": "synthetic-valid"
+      }
+    },
+    "stateContinuity": {
+      "availability": "AVAILABLE",
+      "continuous": true,
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "stateContinuityEvidence": "synthetic-continuous"
+      }
+    }
+  },
+  "alignment": {
+    "checks": [
+      {
+        "checkId": "synthetic-amount-in-alignment",
+        "critical": true,
+        "status": "FAIL",
+        "sourceReferences": [
+          "/capability/raw/amountIn",
+          "/intent/inputAmount",
+          "/simulation/outcomes/items/0/raw/amountIn"
+        ]
+      }
+    ]
+  },
+  "decision": {
+    "status": "STOP",
+    "reasons": [
+      {
+        "code": "CRITICAL_ALIGNMENT_FAIL",
+        "sourceReferences": [
+          "/capability/raw/amountIn",
+          "/intent/inputAmount",
+          "/simulation/outcomes/items/0/raw/amountIn"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    {
+      "code": "SYNTHETIC_AMOUNT_IN_MISMATCH_FIXTURE_ONLY",
+      "description": "This synthetic development fixture is only for PreflightReport schema and Decision Engine regression testing. Its favorable synthetic simulation does not override the amountIn mismatch. The 1-versus-10 amount values are synthetic integer strings, not Moss, Monad, token, protocol, wallet, RPC, Quote, Receipt, simulation, or chain evidence. MANUAL_REVIEW is not a safety conclusion, approval, authorization, execution guarantee, or permission to sign. STOP is a structured fail-closed result, not a safety proof or transaction authorization.",
+      "sourceReferences": [
+        "/capability/raw/amountIn",
+        "/intent/inputAmount",
+        "/simulation/outcomes/items/0/raw/amountIn"
+      ]
+    }
+  ]
+}
