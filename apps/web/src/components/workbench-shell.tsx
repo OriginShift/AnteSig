@@ -19,12 +19,16 @@ import {
   reduceRunState,
 } from "../client/run-state";
 import type { PreflightRequest } from "../contracts/preflight";
+import { AlignmentList } from "./alignment-list";
 import { CapabilityInspector } from "./capability-inspector";
+import { ComparisonStrip } from "./comparison-strip";
+import { DecisionBanner } from "./decision-banner";
 import { EvidenceTimeline } from "./evidence-timeline";
 import { IntentForm } from "./intent-form";
 import { ProvenanceBadge } from "./provenance-badge";
 import { QuoteComparison } from "./quote-comparison";
 import { RunControls } from "./run-controls";
+import { StopDetails } from "./stop-details";
 
 function stateDescription(status: string): string {
   switch (status) {
@@ -290,21 +294,24 @@ export function WorkbenchShell() {
 
               {state.status === "RESULT" ? (
                 <div className="result-content">
-                  <div
-                    className={`decision-banner ${
-                      state.response.report.decision.status === "STOP"
-                        ? "stop"
-                        : ""
-                    }`}
-                  >
-                    <div>
-                      <strong>Decision</strong>
-                      <p>Human review remains required.</p>
-                    </div>
-                    <span className="decision-value">
-                      {state.response.report.decision.status}
-                    </span>
-                  </div>
+                  <DecisionBanner
+                    limitations={state.response.report.limitations}
+                    presentation={state.response.presentation}
+                  />
+
+                  <ComparisonStrip
+                    capability={state.response.report.capability}
+                    intent={state.response.report.intent}
+                    quotes={state.response.report.quotes}
+                    selection={state.response.report.selection}
+                    simulation={state.response.report.simulation}
+                  />
+
+                  <AlignmentList
+                    checks={state.response.report.alignment.checks}
+                  />
+
+                  <StopDetails presentation={state.response.presentation} />
 
                   <dl className="result-facts">
                     <div>
