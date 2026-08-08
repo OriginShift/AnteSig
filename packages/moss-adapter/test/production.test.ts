@@ -29,6 +29,11 @@ function trackedBindings() {
   };
   const bindings = {
     chainId: 143,
+    simulationRpcClient: {
+      request: async () => {
+        throw new Error("synthetic production test does not perform RPC");
+      },
+    },
     buildInfo: () => MOSS_BUILD_INFO,
     describe: async () => {
       calls.describe += 1;
@@ -50,7 +55,7 @@ function trackedBindings() {
       return {
         protocolId: "synthetic-protocol",
         method: "swap",
-        simulation: { status: "synthetic-success" },
+        simulation: { results: [], status: "synthetic-success" },
       };
     },
   } satisfies MossSourceBindings;

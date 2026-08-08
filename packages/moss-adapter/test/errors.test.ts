@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import {
+  createProductionMossPort,
   MOSS_BUILD_INFO,
   MossAdapterError,
-  createProductionMossPort,
   type MossAdapterErrorCode,
   type MossBuildInfo,
   type MossSourceBindings,
@@ -46,6 +46,11 @@ function syntheticBindings() {
   };
   const bindings = {
     chainId: 143,
+    simulationRpcClient: {
+      request: async () => {
+        throw new Error("synthetic error test does not perform RPC");
+      },
+    },
     buildInfo: () => MOSS_BUILD_INFO,
     describe: async () => operation,
     quote: async () => ({ operation, quote: { amountOut: "42" } }),

@@ -9,13 +9,13 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import {
+  type ActionInput,
+  type AssetCatalogV0_1,
+  type CapabilityConstructionPolicyV0_1,
   collectAndSelectQuotesV0_1,
   constructCapabilityV0_1,
   createFakeMossPort,
   MOSS_BUILD_INFO,
-  type ActionInput,
-  type AssetCatalogV0_1,
-  type CapabilityConstructionPolicyV0_1,
   type MossPort,
   type MossSourceBindings,
   type QuoteCollectionRequestV0_1,
@@ -130,6 +130,11 @@ function trackedBindings(capability: RawCapability = goldenCapability()) {
   };
   const bindings = {
     chainId: 143,
+    simulationRpcClient: {
+      request: async () => {
+        throw new Error("synthetic Capability test does not perform RPC");
+      },
+    },
     buildInfo: () => MOSS_BUILD_INFO,
     describe: async () => operation,
     quote: async () => {
@@ -158,7 +163,7 @@ function trackedBindings(capability: RawCapability = goldenCapability()) {
       return {
         protocolId: PROTOCOL,
         method: "swap",
-        simulation: { status: "synthetic-success" },
+        simulation: { results: [], status: "synthetic-success" },
       };
     },
   } satisfies MossSourceBindings;
@@ -455,7 +460,7 @@ describe("synthetic Capability construction and integrity", () => {
     expect(action).toHaveBeenCalledOnce();
   });
 
-  it("forwards the registered action return by exact identity without mapping simulation", async () => {
+  it("forwards the registered action return by exact identity into mapped simulation", async () => {
     const { port, result, capability, calls, delegatedSimulationInputs } =
       await construct();
 
@@ -463,13 +468,14 @@ describe("synthetic Capability construction and integrity", () => {
 
     expect(calls.simulate).toBe(1);
     expect(delegatedSimulationInputs[0]).toBe(capability);
-    expect(simulation.miniDemoDerived).toEqual({
-      source: {
-        layer: "MINI_DEMO_DERIVED",
-        ruleVersion: "moss-adapter-boundary-v0.1",
+    expect(simulation.miniDemoDerived).toMatchObject({
+      source: { layer: "MINI_DEMO_DERIVED" },
+      derivedBy: "@moss-mini-demo/moss-adapter",
+      capabilityIntegrity: "PROVEN",
+      simulationBlock: {
+        status: "UNPROVABLE",
+        reasons: expect.arrayContaining(["BLOCK_NUMBER_UNOBSERVABLE"]),
       },
-      mappingStatus: "NOT_MAPPED",
-      reason: "DEFERRED_TO_M2_07",
     });
     expect(result.verifyCurrentIntegrity().status).toBe("MATCH");
   });
