@@ -1,8 +1,9 @@
 import "server-only";
 
-import { readFileSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
 import { PreflightReportSchema } from "@moss-mini-demo/report-schema";
+import amountInMismatch from "../../../../packages/report-schema/fixtures/amount-in-mismatch.v0.1.json";
+import manualReviewSuccess from "../../../../packages/report-schema/fixtures/manual-review-success.v0.1.json";
+import tokenOutMismatch from "../../../../packages/report-schema/fixtures/token-out-mismatch.v0.1.json";
 import type { FixtureScenario } from "../contracts/preflight";
 import type {
   PreflightService,
@@ -10,28 +11,14 @@ import type {
   PreflightServiceResult,
 } from "./preflight-service";
 
-const FIXTURE_FILES = {
-  "manual-review-success": "manual-review-success.v0.1.json",
-  "token-out-mismatch": "token-out-mismatch.v0.1.json",
-  "amount-in-mismatch": "amount-in-mismatch.v0.1.json",
-} as const satisfies Record<FixtureScenario, string>;
-
-function repositoryRoot(): string {
-  const currentDirectory = process.cwd();
-  return basename(currentDirectory) === "web" &&
-    basename(dirname(currentDirectory)) === "apps"
-    ? resolve(currentDirectory, "../..")
-    : currentDirectory;
-}
+const FIXTURES = {
+  "manual-review-success": manualReviewSuccess,
+  "token-out-mismatch": tokenOutMismatch,
+  "amount-in-mismatch": amountInMismatch,
+} as const satisfies Record<FixtureScenario, unknown>;
 
 function readFixture(scenario: FixtureScenario) {
-  const fixturePath = resolve(
-    repositoryRoot(),
-    "packages/report-schema/fixtures",
-    FIXTURE_FILES[scenario],
-  );
-  const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
-  return PreflightReportSchema.parse(fixture);
+  return PreflightReportSchema.parse(FIXTURES[scenario]);
 }
 
 export class FakePreflightService implements PreflightService {
