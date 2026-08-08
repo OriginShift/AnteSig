@@ -1,0 +1,17 @@
+{
+  "contractVersion": "0.1",
+  "mode": "LIVE",
+  "intent": {
+    "account": "0x1111111111111111111111111111111111111111",
+    "inputAsset": {
+      "kind": "NATIVE"
+    },
+    "outputAsset": {
+      "kind": "ERC20",
+      "address": "0x2222222222222222222222222222222222222222"
+    },
+    "inputAmount": "1000000000000000000",
+    "maxSlippageBps": 50,
+    "allowedProtocols": ["synthetic-protocol"]
+  }
+}
