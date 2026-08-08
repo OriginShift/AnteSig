@@ -30,6 +30,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@moss-mini-demo/clear402-profile':
+        specifier: workspace:*
+        version: link:../../packages/clear402-profile
       '@moss-mini-demo/moss-adapter':
         specifier: workspace:*
         version: link:../../packages/moss-adapter

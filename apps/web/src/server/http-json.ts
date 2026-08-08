@@ -12,15 +12,21 @@ export function acceptsJsonContentType(value: string | null): boolean {
   return value !== null && JSON_CONTENT_TYPE.test(value);
 }
 
-export function declaredBodyIsTooLarge(request: Request): boolean {
+export function declaredBodyIsTooLarge(
+  request: Request,
+  maximumBytes = MAX_PREFLIGHT_REQUEST_BYTES,
+): boolean {
   const declaredLength = request.headers.get("content-length");
   if (declaredLength === null || !/^[0-9]+$/.test(declaredLength)) {
     return false;
   }
-  return BigInt(declaredLength) > BigInt(MAX_PREFLIGHT_REQUEST_BYTES);
+  return BigInt(declaredLength) > BigInt(maximumBytes);
 }
 
-export async function readBoundedJsonBody(request: Request): Promise<unknown> {
+export async function readBoundedJsonBody(
+  request: Request,
+  maximumBytes = MAX_PREFLIGHT_REQUEST_BYTES,
+): Promise<unknown> {
   const reader = request.body?.getReader();
   if (reader === undefined) {
     throw new InvalidJsonError();
@@ -35,7 +41,7 @@ export async function readBoundedJsonBody(request: Request): Promise<unknown> {
       break;
     }
     totalBytes += value.byteLength;
-    if (totalBytes > MAX_PREFLIGHT_REQUEST_BYTES) {
+    if (totalBytes > maximumBytes) {
       await reader.cancel().catch(() => undefined);
       throw new RequestTooLargeError();
     }
