@@ -1,0 +1,35 @@
+{
+  "fixtureVersion": "0.1",
+  "sourceBoundary": "FIXTURE",
+  "scenario": "rpc-failure",
+  "operation": {
+    "protocol": "synthetic-fixture-protocol",
+    "method": "swap"
+  },
+  "capability": {
+    "kind": "capability",
+    "protocol": "synthetic-fixture-protocol",
+    "method": "swap",
+    "params": {
+      "amountIn": "1000000000000000"
+    },
+    "children": [
+      {
+        "kind": "transaction",
+        "transaction": {
+          "from": "0x47833B74E85e2847125e5c3F20B59f6eD063985A",
+          "to": "0xFcd0DA3726376D618d88B4999Ca6030B18aA62aC",
+          "data": "0x1234",
+          "value": "0x0"
+        }
+      }
+    ]
+  },
+  "simulation": {
+    "status": "FAILED",
+    "error": {
+      "code": "SIMULATION_ACQUISITION_FAILED",
+      "message": "Synthetic offline fixture acquisition failure."
+    }
+  }
+}

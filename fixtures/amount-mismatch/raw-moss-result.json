@@ -1,0 +1,60 @@
+{
+  "fixtureVersion": "0.1",
+  "sourceBoundary": "FIXTURE",
+  "scenario": "amount-mismatch",
+  "operation": {
+    "protocol": "synthetic-amount-in-mismatch-protocol",
+    "method": "swap"
+  },
+  "capability": {
+    "kind": "capability",
+    "protocol": "synthetic-amount-in-mismatch-protocol",
+    "method": "swap",
+    "params": {
+      "amountIn": "10000000000000000000"
+    },
+    "children": [
+      {
+        "kind": "transaction",
+        "transaction": {
+          "from": "0x5555555555555555555555555555555555555555",
+          "to": "0x7777777777777777777777777777777777777777",
+          "data": "0x1234",
+          "value": "0x0"
+        }
+      }
+    ]
+  },
+  "simulation": {
+    "status": "AVAILABLE",
+    "result": {
+      "results": [
+        {
+          "protocol": "synthetic-amount-in-mismatch-protocol",
+          "method": "swap",
+          "transaction": {
+            "from": "0x5555555555555555555555555555555555555555",
+            "to": "0x7777777777777777777777777777777777777777",
+            "data": "0x1234",
+            "value": "0x0"
+          },
+          "reverted": false,
+          "receipt": {
+            "kind": "receipt",
+            "protocol": "synthetic-amount-in-mismatch-protocol",
+            "outcome": {
+              "status": "SUCCESS",
+              "amountIn": "10000000000000000000",
+              "amountOut": "42000000"
+            },
+            "text": "amount-mismatch synthetic receipt",
+            "changes": []
+          },
+          "changes": [],
+          "warnings": [],
+          "gas": "21000"
+        }
+      ]
+    }
+  }
+}

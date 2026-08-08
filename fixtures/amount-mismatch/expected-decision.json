@@ -1,0 +1,13 @@
+{
+  "status": "STOP",
+  "reasons": [
+    {
+      "code": "CRITICAL_ALIGNMENT_FAIL",
+      "sourceReferences": [
+        "/capability/raw/amountIn",
+        "/intent/inputAmount",
+        "/simulation/outcomes/items/0/raw/amountIn"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "0.1",
+  "reportId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "generatedAt": "2031-06-07T08:09:10.000Z",
+  "network": "eip155:99999999999999999999999999999999",
+  "provenance": "FIXTURE",
+  "intent": {
+    "account": "0x47833B74E85e2847125e5c3F20B59f6eD063985A",
+    "inputAsset": {
+      "kind": "NATIVE"
+    },
+    "outputAsset": {
+      "kind": "ERC20",
+      "address": "0xFcd0DA3726376D618d88B4999Ca6030B18aA62aC"
+    },
+    "inputAmount": "1000000000000000",
+    "maxSlippageBps": 50,
+    "allowedProtocols": ["synthetic-fixture-protocol"],
+    "recipient": "0xD468b6928b92D983F6C6CB9382B438E13D999e3d"
+  },
+  "quotes": [
+    {
+      "quoteId": "synthetic-success-quote-v0-1",
+      "protocolId": "synthetic-fixture-protocol",
+      "inputAsset": {
+        "kind": "NATIVE"
+      },
+      "outputAsset": {
+        "kind": "ERC20",
+        "address": "0xFcd0DA3726376D618d88B4999Ca6030B18aA62aC"
+      },
+      "inputAmount": "1000000000000000",
+      "status": "SUCCESS",
+      "outputAmount": "42000000",
+      "raw": {
+        "origin": "synthetic-development-fixture",
+        "quoteEvidence": "not-a-protocol-quote"
+      }
+    }
+  ],
+  "selection": {
+    "status": "SELECTED",
+    "protocolId": "synthetic-fixture-protocol",
+    "quoteId": "synthetic-success-quote-v0-1",
+    "reason": {
+      "code": "SYNTHETIC_SELECTED_SUCCESS_QUOTE",
+      "sourceReferences": ["/quotes/0"]
+    }
+  },
+  "capability": {
+    "availability": "AVAILABLE",
+    "raw": {
+      "origin": "synthetic-development-fixture",
+      "capabilityEvidence": "not-a-moss-capability"
+    }
+  },
+  "simulation": {
+    "availability": "FAILED",
+    "failure": {
+      "code": "SIMULATION_ACQUISITION_FAILED",
+      "sourceReferences": ["/capability/raw"]
+    }
+  },
+  "alignment": {
+    "checks": [
+      {
+        "checkId": "synthetic-critical-alignment",
+        "critical": true,
+        "status": "PASS",
+        "sourceReferences": ["/intent", "/simulation"]
+      }
+    ]
+  },
+  "decision": {
+    "status": "STOP",
+    "reasons": [
+      {
+        "code": "SIMULATION_ACQUISITION_FAILED",
+        "sourceReferences": ["/simulation/availability"]
+      }
+    ]
+  },
+  "limitations": [
+    {
+      "code": "SYNTHETIC_RPC_FAILURE_FIXTURE_ONLY",
+      "description": "Synthetic offline acquisition failure for deterministic reliability testing only.",
+      "sourceReferences": ["/simulation/availability"]
+    }
+  ]
+}
