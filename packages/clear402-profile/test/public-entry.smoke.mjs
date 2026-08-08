@@ -27,3 +27,16 @@ for (const constantName of [
     );
   }
 }
+
+for (const functionName of [
+  "canonicalizeClear402ReportV0_1",
+  "clear402ReportProtectedBytesV0_1",
+  "digestClear402ReportV0_1",
+  "verifyClear402CredentialV0_1",
+]) {
+  if (typeof packageEntry[functionName] !== "function") {
+    throw new Error(
+      `public package entry did not expose ${functionName} at runtime`,
+    );
+  }
+}
