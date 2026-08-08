@@ -56,6 +56,15 @@ export type ActionInput = Readonly<{
   params: JsonValue;
 }>;
 
+export type MossRpcRequestV0_1 = Readonly<{
+  method: string;
+  params?: readonly unknown[];
+}>;
+
+export interface MossSimulationRpcClientV0_1 {
+  request(request: MossRpcRequestV0_1): Promise<unknown>;
+}
+
 export type MossLoadedOperation = Readonly<{
   protocolId: string;
   method: string;
@@ -66,6 +75,7 @@ export type MossLoadedOperation = Readonly<{
 
 export interface MossSourceBindings {
   readonly chainId: unknown;
+  readonly simulationRpcClient: MossSimulationRpcClientV0_1;
   buildInfo(): MossBuildInfo;
   describe(protocolId: string, method: string): Promise<MossLoadedOperation>;
   quote(
@@ -87,7 +97,10 @@ export interface MossSourceBindings {
       capability: RawCapability;
     }>
   >;
-  simulate(capability: RawCapability): Promise<
+  simulate(
+    capability: RawCapability,
+    rpcClient: MossSimulationRpcClientV0_1,
+  ): Promise<
     Readonly<{
       protocolId: string;
       method: string;
@@ -439,13 +452,102 @@ export type RawSimulationEvidence = Readonly<{
   }>;
   mossOriginal: Readonly<{
     source: MossOriginalSource;
-    value: JsonValue;
+    capability: unknown;
+    simulation: JsonValue;
+    retained: Readonly<{
+      capability: RawCapability;
+      simulation: JsonValue;
+    }>;
+    transactions: readonly Readonly<{
+      transactionIndex: number;
+      value: JsonValue;
+    }>[];
+    changes: readonly Readonly<{
+      transactionIndex: number;
+      changeIndex: number;
+      value: JsonValue;
+    }>[];
+    receipts: readonly Readonly<{
+      transactionIndex: number;
+      value: JsonValue;
+    }>[];
+    outcomes: readonly Readonly<{
+      transactionIndex: number;
+      value: JsonValue;
+    }>[];
+    warnings: readonly Readonly<{
+      transactionIndex: number;
+      warningIndex: number;
+      code: string;
+      message: string;
+      value: JsonValue;
+    }>[];
+    gas: readonly Readonly<{
+      transactionIndex: number;
+      value: string | null;
+    }>[];
   }>;
-  miniDemoDerived: Readonly<{
-    source: MiniDemoDerivedSource;
-    mappingStatus: "NOT_MAPPED";
-    reason: "DEFERRED_TO_M2_07";
+  miniDemoDerived: MiniDemoDerivedVerificationV0_1;
+}>;
+
+export type SimulationVerificationStatusV0_1 =
+  | "PROVEN"
+  | "FAILED"
+  | "UNPROVABLE";
+
+export type StateContinuityVerificationStatusV0_1 =
+  | SimulationVerificationStatusV0_1
+  | "NOT_APPLICABLE";
+
+export type SimulationBlockFailureCodeV0_1 =
+  | "BLOCK_NUMBER_UNOBSERVABLE"
+  | "BLOCK_NUMBER_INCONSISTENT"
+  | "BLOCK_PARAMETER_UNOBSERVABLE"
+  | "BLOCK_PARAMETER_INCONSISTENT"
+  | "BLOCK_HASH_UNOBSERVABLE"
+  | "BLOCK_HASH_CHANGED";
+
+export type SimulationRpcObservationV0_1 = Readonly<{
+  blockNumberResponses: readonly string[];
+  preBlockHashes: readonly (string | null)[];
+  postBlockHash: string | null;
+  requestBlocks: readonly Readonly<{
+    method: "debug_traceCall" | "eth_estimateGas";
+    blockParameter: string | null;
+  }>[];
+  failures: readonly SimulationBlockFailureCodeV0_1[];
+}>;
+
+export type SimulationBlockVerificationV0_1 =
+  | Readonly<{
+      status: "PROVEN";
+      blockNumber: string;
+      blockHash: string;
+      observation: SimulationRpcObservationV0_1;
+    }>
+  | Readonly<{
+      status: "UNPROVABLE";
+      reasons: readonly SimulationBlockFailureCodeV0_1[];
+      observation: SimulationRpcObservationV0_1;
+    }>;
+
+export type MiniDemoDerivedVerificationV0_1 = Readonly<{
+  source: MiniDemoDerivedSource;
+  derivedBy: "@moss-mini-demo/moss-adapter";
+  ruleVersion: "0.1";
+  mossCommit: string;
+  simulationBlock: SimulationBlockVerificationV0_1;
+  capabilityIntegrity: SimulationVerificationStatusV0_1;
+  capabilityDigests: Readonly<{
+    algorithm: "RFC8785-SHA256";
+    domain: "moss-mini-demo:capability:v0.1\n";
+    preSimulation: `sha256:${string}` | null;
+    postSimulation: `sha256:${string}` | null;
   }>;
+  receiptCoverage: SimulationVerificationStatusV0_1;
+  ordering: SimulationVerificationStatusV0_1;
+  stateContinuity: StateContinuityVerificationStatusV0_1;
+  sourceReferences: readonly string[];
 }>;
 
 export interface MossPort {

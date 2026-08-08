@@ -3,16 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import {
-  MOSS_BUILD_INFO,
-  constructCapabilityV0_1,
-  createProductionMossPort,
   type CapabilityConstructionPolicyV0_1,
   type CapabilityConstructionResultV0_1,
+  constructCapabilityV0_1,
+  createProductionMossPort,
+  MOSS_BUILD_INFO,
+  type MossSourceBindings,
   type QuoteCandidateOutcomeV0_1,
   type QuoteCollectionRequestV0_1,
   type QuoteTimingV0_1,
   type RawQuote,
-  type MossSourceBindings,
 } from "../src/index.js";
 
 type AssertNever<T extends never> = T;
@@ -144,6 +144,7 @@ function syntheticBindings() {
     children: [],
   };
   const simulation = {
+    results: [],
     status: "synthetic-success",
     receipts: [{ status: "synthetic-receipt" }],
   };
@@ -156,6 +157,11 @@ function syntheticBindings() {
   };
   const bindings = {
     chainId: 143,
+    simulationRpcClient: {
+      request: async () => {
+        throw new Error("synthetic contract test does not perform RPC");
+      },
+    },
     buildInfo: () => MOSS_BUILD_INFO,
     describe: async () => operation,
     quote: async () => ({ operation, quote }),
@@ -237,16 +243,18 @@ describe("Moss adapter evidence contracts", () => {
     expect(evidence).not.toHaveProperty("digest");
   });
 
-  it("keeps simulation raw and explicitly unmapped", async () => {
+  it("keeps simulation raw while separating mapped verification", async () => {
     const { bindings, capability, simulation } = syntheticBindings();
     const port = createProductionMossPort(bindings);
 
     const evidence = await port.simulate(capability);
 
-    expect(evidence.mossOriginal.value).toBe(simulation);
+    expect(evidence.mossOriginal.simulation).toBe(simulation);
     expect(evidence.miniDemoDerived).toMatchObject({
-      mappingStatus: "NOT_MAPPED",
-      reason: "DEFERRED_TO_M2_07",
+      derivedBy: "@moss-mini-demo/moss-adapter",
+      ruleVersion: "0.1",
+      capabilityIntegrity: "PROVEN",
+      simulationBlock: { status: "UNPROVABLE" },
     });
     expect(evidence).not.toHaveProperty("alignment");
     expect(evidence).not.toHaveProperty("decision");

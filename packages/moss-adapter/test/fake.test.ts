@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import {
-  MOSS_BUILD_INFO,
   createFakeMossPort,
   createProductionMossPort,
+  MOSS_BUILD_INFO,
   type MossSourceBindings,
   type RawCapability,
 } from "../src/index.js";
@@ -27,6 +27,11 @@ function syntheticBindings(): MossSourceBindings {
   };
   return {
     chainId: 143,
+    simulationRpcClient: {
+      request: async () => {
+        throw new Error("synthetic Fake test does not perform RPC");
+      },
+    },
     buildInfo: () => MOSS_BUILD_INFO,
     describe: async () => operation,
     quote: async () => ({ operation, quote: { amountOut: "42" } }),
@@ -37,7 +42,7 @@ function syntheticBindings(): MossSourceBindings {
     simulate: async () => ({
       protocolId: "synthetic-protocol",
       method: "swap",
-      simulation: { status: "synthetic-success" },
+      simulation: { results: [], status: "synthetic-success" },
     }),
   };
 }

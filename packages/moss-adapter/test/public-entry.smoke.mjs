@@ -37,6 +37,14 @@ for (const typeOnlyName of [
   "QuoteCollectionResultV0_1",
   "CapabilityConstructionPolicyV0_1",
   "CapabilityConstructionResultV0_1",
+  "MossRpcRequestV0_1",
+  "MossSimulationRpcClientV0_1",
+  "MiniDemoDerivedVerificationV0_1",
+  "SimulationBlockFailureCodeV0_1",
+  "SimulationBlockVerificationV0_1",
+  "SimulationRpcObservationV0_1",
+  "SimulationVerificationStatusV0_1",
+  "StateContinuityVerificationStatusV0_1",
 ]) {
   assert.equal(typeOnlyName in packageEntry, false);
 }

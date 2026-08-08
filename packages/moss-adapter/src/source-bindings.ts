@@ -4,7 +4,13 @@ import {
   type MossAdapterErrorCode,
   type MossAdapterOperation,
 } from "./errors.js";
+import { mapMossEvidenceV0_1 } from "./evidence-mapper.js";
 import { isJsonExactValue } from "./integrity.js";
+import {
+  createRecordingSimulationRpcSessionV0_1,
+  postSimulationCapabilityDigestV0_1,
+  retainSimulationCapabilityV0_1,
+} from "./simulation.js";
 import type {
   ActionInput,
   JsonValue,
@@ -12,11 +18,13 @@ import type {
   MossLoadedOperation,
   MossOriginalSource,
   MossPort,
+  MossSimulationRpcClientV0_1,
   MossSourceBindings,
   QuoteInput,
   QuoteRequestOptionsV0_1,
   RawCapability,
   RawOperationContract,
+  SimulationRpcObservationV0_1,
 } from "./types.js";
 
 type SourceProvenance = MossOriginalSource["provenance"];
@@ -502,12 +510,37 @@ export function createBoundMossPort(
       } else {
         capabilityInput = snapshotCapabilityInput(capability);
       }
-      const result = await invoke(
-        "simulate",
-        "SIMULATION_FAILED",
-        context,
-        () => bindings.simulate(capabilityInput),
-      );
+      const retainedCapability =
+        retainSimulationCapabilityV0_1(capabilityInput);
+      if (retainedCapability === undefined) {
+        throw inputError("simulate", context);
+      }
+      let simulationRpcClient: MossSimulationRpcClientV0_1;
+      try {
+        simulationRpcClient = bindings.simulationRpcClient;
+        if (
+          typeof simulationRpcClient !== "object" ||
+          simulationRpcClient === null ||
+          typeof simulationRpcClient.request !== "function"
+        ) {
+          throw sourceError("simulate", context);
+        }
+      } catch {
+        throw sourceError("simulate", context);
+      }
+      const session =
+        createRecordingSimulationRpcSessionV0_1(simulationRpcClient);
+      let result: Awaited<ReturnType<MossSourceBindings["simulate"]>>;
+      let observation: SimulationRpcObservationV0_1;
+      try {
+        result = await invoke("simulate", "SIMULATION_FAILED", context, () =>
+          bindings.simulate(capabilityInput, session.client),
+        );
+      } finally {
+        observation = await session.finish();
+      }
+      const postSimulationDigest =
+        postSimulationCapabilityDigestV0_1(capabilityInput) ?? null;
       return inspectSource("simulate", context, () => {
         if (!isPlainRecord(result)) {
           throw sourceError("simulate");
@@ -516,28 +549,18 @@ export function createBoundMossPort(
         assertSourceIdentifier(result.method, "simulate", {
           protocolId: result.protocolId,
         });
-        if (!safelyIsJsonSafe(result.simulation)) {
-          throw sourceError("simulate", {
-            protocolId: result.protocolId,
-            method: result.method,
-          });
-        }
-        return Object.freeze({
-          sourceContext: Object.freeze({
-            chainId: CHAIN_ID,
-            protocolId: result.protocolId,
-            method: result.method,
-            buildInfo: MOSS_BUILD_INFO,
-          }),
-          mossOriginal: Object.freeze({
-            source,
-            value: result.simulation,
-          }),
-          miniDemoDerived: Object.freeze({
-            source: DERIVED_SOURCE,
-            mappingStatus: "NOT_MAPPED",
-            reason: "DEFERRED_TO_M2_07",
-          }),
+        return mapMossEvidenceV0_1({
+          protocolId: result.protocolId,
+          method: result.method,
+          buildInfo: MOSS_BUILD_INFO,
+          originalSource: source,
+          derivedSource: DERIVED_SOURCE,
+          capability: capabilityInput,
+          retainedCapability: retainedCapability.snapshot,
+          simulation: result.simulation,
+          observation,
+          preSimulationDigest: retainedCapability.digest,
+          postSimulationDigest,
         });
       });
     },
