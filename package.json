@@ -19,6 +19,7 @@
     "test:package-import": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && node packages/report-schema/test/public-entry.smoke.mjs && node packages/decision-engine/test/public-entry.smoke.mjs && node --conditions=react-server packages/moss-adapter/test/public-entry.smoke.mjs && node packages/preflight-core/test/public-entry.smoke.mjs",
     "test:coverage": "pnpm --filter @moss-mini-demo/preflight-core test:coverage",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --config tests/e2e/playwright.config.mjs",
     "test:web:bundle": "node apps/web/test/browser-bundle-leak.smoke.mjs",
     "test:web:production": "node apps/web/test/production-start.smoke.mjs",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:package-import && pnpm test && pnpm test:coverage && pnpm test:web:bundle && pnpm test:web:production"
