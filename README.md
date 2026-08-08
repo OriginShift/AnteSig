@@ -121,6 +121,9 @@ or strengthen evidence semantics.
 ## Project documents
 
 - [Project brief](docs/project-brief.md)
+- [Hackathon scope and Gate contract](docs/hackathon-scope.md)
+- [Judge evidence map](docs/judge-map.md)
+- [Implementation roadmap](docs/implementation-roadmap.md)
 - [Architecture](docs/architecture.md)
 - [Security boundary](docs/security-boundary.md)
 - [STOP presentation requirements](docs/stop-presentation.md)
