@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "test:live": "pnpm --filter @moss-mini-demo/report-schema build && pnpm build && node --conditions=react-server test/live/live-smoke.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
