@@ -48,6 +48,17 @@ export const Clear402EnabledPreflightSuccessResponseSchema =
           "Clear402 response must preserve the baseline response contract",
       });
     }
+    if (
+      response.clear402.status === "AVAILABLE" &&
+      JSON.stringify(response.clear402.credential.report) !==
+        JSON.stringify(response.report)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Clear402 export report must match the displayed report",
+        path: ["clear402", "credential", "report"],
+      });
+    }
   });
 
 export type Clear402PreflightExtension = z.infer<

@@ -1,11 +1,13 @@
 "use client";
 
+import type { Provenance } from "@moss-mini-demo/report-schema";
 import { useId, useRef } from "react";
 import { serializeRawArtifact } from "../client/evidence-model";
 
 type RawEvidenceDrawerProps = Readonly<{
   artifact: unknown;
   filename: string;
+  provenance: Provenance;
   title: string;
   triggerId: string;
 }>;
@@ -13,6 +15,7 @@ type RawEvidenceDrawerProps = Readonly<{
 export function RawEvidenceDrawer({
   artifact,
   filename,
+  provenance,
   title,
   triggerId,
 }: RawEvidenceDrawerProps) {
@@ -59,6 +62,7 @@ export function RawEvidenceDrawer({
           <div>
             <span className="raw-drawer-eyebrow">Raw evidence</span>
             <h3 id={titleId}>{title}</h3>
+            <span className="raw-drawer-provenance">Source: {provenance}</span>
           </div>
           <button
             aria-label="Close raw evidence"

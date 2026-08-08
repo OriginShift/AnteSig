@@ -121,7 +121,7 @@ for (const [viewportName, viewport] of [
   }
 }
 
-test("Live failure remains fail-closed without Fixture fallback", async ({
+test("Live failure remains fail-closed until explicit Fixture recovery with isolated provenance", async ({
   page,
 }) => {
   const payloads = [];
@@ -158,6 +158,46 @@ test("Live failure remains fail-closed without Fixture fallback", async ({
   await expect(page.locator(".fixture-picker, .result-content")).toHaveCount(0);
   expect(payloads).toHaveLength(1);
   expect(payloads[0]).toMatchObject({ mode: "LIVE" });
+  const liveRunId = await page
+    .locator(".error-run-facts > div")
+    .filter({ hasText: "Failed run ID" })
+    .locator("dd")
+    .textContent();
+  expect(liveRunId).toMatch(/^run_[0-9a-f-]{36}$/);
+
+  const recoveryStartedAt = Date.now();
+  await page.getByRole("button", { name: "Recover with Fixture" }).click();
+  await expect(page.locator(".recovery-audit")).toContainText(liveRunId ?? "");
+  expect(payloads).toHaveLength(1);
+  await page.getByRole("button", { name: "Happy path" }).click();
+  await page.getByRole("button", { name: "Run preflight" }).click();
+  await page.getByRole("heading", { name: "Three-way comparison" }).waitFor();
+  expect(Date.now() - recoveryStartedAt).toBeLessThanOrEqual(15_000);
+
+  const fixtureRunId = await page
+    .locator(".result-facts > div")
+    .filter({ hasText: "Run ID" })
+    .locator("dd")
+    .textContent();
+  expect(fixtureRunId).toMatch(/^run_[0-9a-f-]{36}$/);
+  expect(fixtureRunId).not.toBe(liveRunId);
+  expect(payloads.map(({ mode }) => mode)).toEqual(["LIVE", "FIXTURE"]);
+  await expect(page.locator(".provenance-value")).toHaveText("FIXTURE");
+  const recovery = page.locator(".recovery-audit");
+  await expect(recovery).toContainText(fixtureRunId ?? "");
+  await expect(recovery).toContainText("Evidence reuseNONE");
+  await page
+    .locator(".capability-inspector")
+    .getByRole("button", { name: "View raw JSON" })
+    .click();
+  const rawDialog = page.getByRole("dialog", { name: "Capability evidence" });
+  await expect(rawDialog.locator(".raw-drawer-provenance")).toHaveText(
+    "Source: FIXTURE",
+  );
+  await expect(
+    rawDialog.getByLabel("Capability evidence raw JSON"),
+  ).toHaveValue(/"provenance": "FIXTURE"/);
+  await page.keyboard.press("Escape");
   await assertNoHorizontalOverflow(page);
 });
 

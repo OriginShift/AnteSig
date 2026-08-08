@@ -361,6 +361,24 @@ describe("non-UI gate with CLEAR402_ENABLED true", () => {
       throw new Error("Expected an available Clear402 credential");
     }
     expect(body.clear402.credential.report).toEqual(body.report);
+
+    const mixedProvenance = {
+      ...body,
+      clear402: {
+        ...body.clear402,
+        credential: {
+          ...body.clear402.credential,
+          report: {
+            ...body.clear402.credential.report,
+            provenance: "LOCAL_FORK" as const,
+          },
+        },
+      },
+    };
+    expect(
+      Clear402EnabledPreflightSuccessResponseSchema.safeParse(mixedProvenance)
+        .success,
+    ).toBe(false);
   });
 
   it("surfaces generation failure without rewriting the original Decision", async () => {

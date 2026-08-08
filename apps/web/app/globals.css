@@ -542,6 +542,63 @@ input:focus-visible {
   padding: 24px;
 }
 
+.recovery-audit {
+  background: #f0f4f3;
+  border-left: 4px solid var(--focus);
+  margin-bottom: 22px;
+  padding: 16px 18px;
+}
+
+.recovery-audit.complete {
+  border-left-color: var(--accent);
+}
+
+.recovery-eyebrow {
+  color: var(--focus);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.recovery-audit h3 {
+  font-size: 1rem;
+  margin: 5px 0 6px;
+}
+
+.recovery-audit > p {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.recovery-facts,
+.error-run-facts {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 14px 0;
+}
+
+.recovery-facts > div,
+.error-run-facts > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px 10px 0;
+}
+
+.recovery-facts > div:nth-child(even),
+.error-run-facts > div:nth-child(even) {
+  border-left: 1px solid var(--line);
+  padding-left: 12px;
+}
+
+.recovery-facts > div:nth-child(n + 3) {
+  border-top: 1px solid var(--line);
+}
+
 .empty-state,
 .loading-state,
 .error-state {
@@ -1637,6 +1694,13 @@ input:focus-visible {
   margin: 0;
 }
 
+.raw-drawer-provenance {
+  color: #d8e3e6;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .icon-button {
   align-items: center;
   background: transparent;
@@ -1694,7 +1758,15 @@ input:focus-visible {
   padding: 6px 8px;
 }
 
-.error-state .command-button {
+.error-run-facts {
+  margin-bottom: 0;
+  width: min(100%, 620px);
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 22px;
 }
 
@@ -1779,9 +1851,22 @@ input:focus-visible {
   .field-row,
   .credential-facts,
   .credential-commands,
+  .error-run-facts,
+  .recovery-facts,
   .report-intent-facts,
   .quote-facts {
     grid-template-columns: 1fr;
+  }
+
+  .error-run-facts > div:nth-child(even),
+  .recovery-facts > div:nth-child(even) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .error-run-facts > div + div,
+  .recovery-facts > div + div {
+    border-top: 1px solid var(--line);
   }
 
   .credential-facts > div:nth-child(even) {
