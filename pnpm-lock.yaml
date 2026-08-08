@@ -68,6 +68,15 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(@types/react@19.2.18)
 
+  packages/clear402-profile:
+    dependencies:
+      '@moss-mini-demo/report-schema':
+        specifier: workspace:*
+        version: link:../report-schema
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+
   packages/decision-engine:
     dependencies:
       '@moss-mini-demo/report-schema':
