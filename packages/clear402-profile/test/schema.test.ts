@@ -1,32 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  CLEAR402_ASSURANCE_KIND_V0_1,
-  CLEAR402_ASSURANCE_STATEMENT_V0_1,
-  CLEAR402_CREDENTIAL_TYPE_V0_1,
-  CLEAR402_CREDENTIAL_VERSION_V0_1,
-  CLEAR402_PROFILE_V0_1,
-  Clear402MonadActionCredentialV0_1Schema,
-} from "../src/index.js";
-
-const reportFixtureTexts = (
-  import.meta as unknown as {
-    glob(
-      pattern: string,
-      options: { eager: true; query: "?raw"; import: "default" },
-    ): Record<string, string>;
-  }
-).glob("../../report-schema/fixtures/manual-review-success.v0.1.json", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
-const reportFixtureText =
-  reportFixtureTexts[
-    "../../report-schema/fixtures/manual-review-success.v0.1.json"
-  ];
-if (reportFixtureText === undefined) {
-  throw new Error("manual-review report fixture was not loaded");
-}
+import { Clear402MonadActionCredentialV0_1Schema } from "../src/index.js";
+import { credentialFixture, type JsonObject } from "./fixtures.js";
 
 const packageManifestTexts = (
   import.meta as unknown as {
@@ -45,30 +19,6 @@ const packageManifestTexts = (
   ],
   { query: "?raw", import: "default", eager: true },
 );
-
-type JsonObject = Record<string, unknown>;
-
-function reportFixture(): JsonObject {
-  return JSON.parse(reportFixtureText) as JsonObject;
-}
-
-function credentialFixture(): JsonObject {
-  return {
-    credentialVersion: CLEAR402_CREDENTIAL_VERSION_V0_1,
-    credentialType: CLEAR402_CREDENTIAL_TYPE_V0_1,
-    profile: CLEAR402_PROFILE_V0_1,
-    report: reportFixture(),
-    integrity: {
-      canonicalization: "RFC8785",
-      digestAlgorithm: "sha256",
-      reportDigest: `sha256:${"0".repeat(64)}`,
-    },
-    assurance: {
-      kind: CLEAR402_ASSURANCE_KIND_V0_1,
-      statement: CLEAR402_ASSURANCE_STATEMENT_V0_1,
-    },
-  };
-}
 
 function parseManifest(path: string): {
   dependencies?: Record<string, string>;
@@ -218,9 +168,11 @@ describe("Clear402 Monad Action Credential v0.1 schema", () => {
     expect(parsed.report).toEqual(original.report);
   });
 
-  it("keeps the package dependency boundary report-only", () => {
+  it("keeps the package dependency boundary report-only and offline", () => {
     expect(parseManifest("../package.json").dependencies).toEqual({
       "@moss-mini-demo/report-schema": "workspace:*",
+      "@noble/hashes": "2.2.0",
+      canonicalize: "3.0.0",
       zod: "4.4.3",
     });
 

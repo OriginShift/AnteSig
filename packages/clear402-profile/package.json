@@ -11,10 +11,13 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "vitest run test/schema.test.ts"
+    "test": "vitest run test",
+    "test:coverage": "vitest run test --coverage.enabled --coverage.provider=v8 --coverage.include=src/**/*.ts --coverage.thresholds.100"
   },
   "dependencies": {
+    "@noble/hashes": "2.2.0",
     "@moss-mini-demo/report-schema": "workspace:*",
+    "canonicalize": "3.0.0",
     "zod": "4.4.3"
   }
 }
