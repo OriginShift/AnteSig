@@ -314,3 +314,101 @@ test("accessibility loading and state-switch controls stay operable", async ({
   await page.getByRole("heading", { name: "Three-way comparison" }).waitFor();
   await assertNoOverflowOrOverlap(page);
 });
+
+test("disabled runtime keeps credential actions absent", async ({ page }) => {
+  test.skip(
+    process.env.CLEAR402_ENABLED === "true",
+    "This assertion covers the default disabled runtime.",
+  );
+  await page.setViewportSize(DESKTOP);
+  await runFixture(page, "Happy path");
+  await expect(page.locator(".credential-actions")).toHaveCount(0);
+  await expect(page.locator(".environment-item").last()).toHaveText(
+    "Optional profile: disabled",
+  );
+  await assertNoOverflowOrOverlap(page);
+});
+
+test.describe("Clear402 credential actions", () => {
+  test.skip(
+    process.env.CLEAR402_ENABLED !== "true",
+    "Credential actions require the enabled runtime mode.",
+  );
+
+  test("credential export and verify remain keyboard operable", async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+    await runFixture(page, "Happy path");
+    const panel = page.locator(".credential-actions");
+
+    await expect(panel).toContainText("UNSIGNED_INTEGRITY_EVIDENCE");
+    await expect(panel).toContainText("FIXTURE");
+    await expect(panel).toContainText("Original copy");
+    const filename = await panel
+      .locator(".credential-filename dd")
+      .textContent();
+    expect(filename).toMatch(/^antesig-clear402-v0\.1-[0-9a-f-]{36}\.json$/);
+
+    const exportButton = panel.getByRole("button", {
+      name: "Export credential",
+    });
+    await exportButton.focus();
+    const download = page.waitForEvent("download");
+    await page.keyboard.press("Enter");
+    expect((await download).suggestedFilename()).toBe(filename);
+
+    const verifyButton = panel.getByRole("button", {
+      name: "Verify credential",
+    });
+    await verifyButton.focus();
+    await page.keyboard.press("Enter");
+    await expect(panel.locator(".credential-verification")).toContainText(
+      "Integrity VALID",
+    );
+    await assertNoOverflowOrOverlap(page);
+    await captureScreenshot(page, "credential-desktop-valid.png");
+  });
+
+  test("credential tamper changes only the copy and shows digest invalid", async ({
+    page,
+  }) => {
+    await page.setViewportSize(MOBILE);
+    await runFixture(page, "Happy path");
+    const panel = page.locator(".credential-actions");
+    const reportId = await page
+      .locator(".result-facts > div")
+      .filter({ has: page.locator("dt", { hasText: "Report ID" }) })
+      .locator("dd")
+      .textContent();
+    const amount = await page
+      .locator(".report-intent-facts > div")
+      .filter({ has: page.locator("dt", { hasText: "Amount in" }) })
+      .locator("dd")
+      .textContent();
+
+    await panel.getByRole("button", { name: "Tamper protected field" }).click();
+    await expect(panel).toContainText("Protected field modified");
+    await panel.getByRole("button", { name: "Verify credential" }).click();
+    await expect(panel.locator(".credential-verification")).toContainText(
+      "Digest INVALID",
+    );
+    await expect(page.locator(".decision-banner.manual-review")).toContainText(
+      "MANUAL_REVIEW",
+    );
+    await expect(
+      page
+        .locator(".result-facts > div")
+        .filter({ has: page.locator("dt", { hasText: "Report ID" }) })
+        .locator("dd"),
+    ).toHaveText(reportId ?? "");
+    await expect(
+      page
+        .locator(".report-intent-facts > div")
+        .filter({ has: page.locator("dt", { hasText: "Amount in" }) })
+        .locator("dd"),
+    ).toHaveText(amount ?? "");
+    await assertNoOverflowOrOverlap(page);
+    await captureScreenshot(page, "credential-mobile-tamper.png");
+  });
+});

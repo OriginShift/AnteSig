@@ -23,6 +23,7 @@ import type { PreflightRequest } from "../contracts/preflight";
 import { AlignmentList } from "./alignment-list";
 import { CapabilityInspector } from "./capability-inspector";
 import { ComparisonStrip } from "./comparison-strip";
+import { CredentialActions } from "./credential-actions";
 import { DecisionBanner } from "./decision-banner";
 import { EvidenceTimeline } from "./evidence-timeline";
 import { IntentForm } from "./intent-form";
@@ -50,7 +51,9 @@ function reportAsset(
   return asset.kind === "NATIVE" ? "NATIVE (no token address)" : asset.address;
 }
 
-export function WorkbenchShell() {
+export function WorkbenchShell({
+  clear402Enabled,
+}: Readonly<{ clear402Enabled: boolean }>) {
   const [state, dispatch] = useReducer(reduceRunState, INITIAL_RUN_STATE);
   const [mode, setMode] = useState<WorkbenchMode>("LIVE");
   const [intentDraft, setIntentDraft] =
@@ -179,6 +182,10 @@ export function WorkbenchShell() {
   }, []);
 
   const report = state.status === "RESULT" ? state.response.report : undefined;
+  const credentialExtension =
+    state.status === "RESULT" && clear402Enabled && "clear402" in state.response
+      ? state.response.clear402
+      : undefined;
 
   return (
     <div className="workbench-shell">
@@ -202,7 +209,10 @@ export function WorkbenchShell() {
           <li className="environment-item">
             Network: {report?.network ?? "awaiting run"}
           </li>
-          <li className="environment-item">Optional profile: disabled</li>
+          <li className="environment-item">
+            Optional profile:{" "}
+            {clear402Enabled ? "Clear402 enabled" : "disabled"}
+          </li>
         </ul>
       </header>
 
@@ -310,6 +320,10 @@ export function WorkbenchShell() {
                     limitations={state.response.report.limitations}
                     presentation={state.response.presentation}
                   />
+
+                  {credentialExtension ? (
+                    <CredentialActions extension={credentialExtension} />
+                  ) : null}
 
                   <ComparisonStrip
                     capability={state.response.report.capability}

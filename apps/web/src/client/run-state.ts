@@ -1,5 +1,7 @@
-import type { PreflightSuccessResponse } from "../contracts/preflight";
-import type { PreflightClientErrorKind } from "./api-client";
+import type {
+  PreflightClientErrorKind,
+  PreflightClientSuccessResponse,
+} from "./api-client";
 
 export type RunProblem = {
   kind: PreflightClientErrorKind | "API";
@@ -14,7 +16,7 @@ export type RunState =
       status: "RESULT";
       token: number;
       completedAt: number;
-      response: PreflightSuccessResponse;
+      response: PreflightClientSuccessResponse;
     }
   | {
       status: "ERROR";
@@ -30,7 +32,7 @@ export type RunEvent =
       type: "RESOLVE";
       token: number;
       completedAt: number;
-      response: PreflightSuccessResponse;
+      response: PreflightClientSuccessResponse;
     }
   | {
       type: "REJECT";
