@@ -13,7 +13,7 @@
     "build": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && pnpm --filter @moss-mini-demo/web build",
     "format:check": "biome check --formatter-enabled=true --linter-enabled=false --assist-enabled=false --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
     "lint": "biome lint --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
-    "typecheck": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/preflight-core build && tsc --noEmit && pnpm --filter @moss-mini-demo/moss-adapter typecheck && pnpm --filter @moss-mini-demo/web typecheck",
+    "typecheck": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/preflight-core build && tsc --noEmit && pnpm --filter @moss-mini-demo/moss-adapter typecheck && pnpm --filter @moss-mini-demo/web typecheck",
     "test": "pnpm build && vitest run --passWithNoTests",
     "test:package-import": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && node packages/report-schema/test/public-entry.smoke.mjs && node packages/decision-engine/test/public-entry.smoke.mjs && node --conditions=react-server packages/moss-adapter/test/public-entry.smoke.mjs && node packages/preflight-core/test/public-entry.smoke.mjs",
     "test:coverage": "pnpm --filter @moss-mini-demo/preflight-core test:coverage",
