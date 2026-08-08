@@ -43,6 +43,8 @@ select {
 }
 
 button:focus-visible,
+a:focus-visible,
+textarea:focus-visible,
 [tabindex="-1"]:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--focus) 45%, transparent);
   outline-offset: 3px;

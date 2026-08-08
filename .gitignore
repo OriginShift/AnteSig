@@ -2,4 +2,6 @@ node_modules/
 coverage/
 dist/
 .next/
+artifacts/test-results/
+playwright-report/
 .DS_Store
