@@ -1,0 +1,20 @@
+{
+  "name": "@moss-mini-demo/preflight-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test:coverage": "vitest run test/alignment.test.ts test/source-references.test.ts --coverage.enabled --coverage.provider=v8 --coverage.include=src/**/*.ts --coverage.thresholds.100"
+  },
+  "dependencies": {
+    "@moss-mini-demo/report-schema": "workspace:*",
+    "zod": "4.4.3"
+  }
+}
