@@ -15,6 +15,7 @@
     "lint": "biome lint --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
     "typecheck": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && tsc --noEmit && pnpm --filter @moss-mini-demo/moss-adapter typecheck && pnpm --filter @moss-mini-demo/web typecheck",
     "test": "pnpm build && vitest run --passWithNoTests",
+    "test:integration": "pnpm build && vitest run tests/integration",
     "test:package-import": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && node packages/report-schema/test/public-entry.smoke.mjs && node packages/decision-engine/test/public-entry.smoke.mjs && node --conditions=react-server packages/moss-adapter/test/public-entry.smoke.mjs && node packages/preflight-core/test/public-entry.smoke.mjs",
     "test:coverage": "pnpm --filter @moss-mini-demo/preflight-core test:coverage",
     "test:web:bundle": "node apps/web/test/browser-bundle-leak.smoke.mjs",

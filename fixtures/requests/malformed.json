@@ -1,0 +1,6 @@
+{
+  "contractVersion": "0.1",
+  "mode": "FIXTURE",
+  "scenario": "manual-review-success",
+  "unexpected": "strict-contract-rejection"
+}
