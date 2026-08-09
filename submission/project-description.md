@@ -2,10 +2,11 @@
 
 ## Submission Status
 
-Draft only. This text is based on
-`main@34f64df97c510a82a700c7b18bf0c0e0009a0aa2`. The exact RC tag, video URLs,
-submission-form URL, and submission confirmation must be added only after their
-Maintainer and external evidence gates complete.
+Draft only. This text is fixed to annotated RC tag
+`hackathon-rc-2026-08-05`, peeled commit
+`34f64df97c510a82a700c7b18bf0c0e0009a0aa2`. Video URLs, the submission-form
+URL, and submission confirmation must be added only after their external
+evidence gates complete.
 
 ## Short Description
 
@@ -103,8 +104,8 @@ repair, suppress, reorder, or strengthen evidence.
 ## Required Final Fields
 
 ```text
-RC tag:                       BLOCKED BY #59
-RC commit:                    BLOCKED BY #59
+RC tag:                       hackathon-rc-2026-08-05
+RC commit:                    34f64df97c510a82a700c7b18bf0c0e0009a0aa2
 90-second backup video URL:   BLOCKED BY #62/#63
 Three-minute demo video URL:  BLOCKED BY #62/#63
 Submission URL:               BLOCKED BY #63/#64
