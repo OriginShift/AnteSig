@@ -22,6 +22,7 @@
     "test:coverage": "pnpm --filter @moss-mini-demo/clear402-profile test:coverage && pnpm --filter @moss-mini-demo/preflight-core test:coverage",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --config tests/e2e/playwright.config.mjs",
+    "test:performance": "CLEAR402_ENABLED=true pnpm build && vitest run tests/performance/performance-guards.test.ts && node tests/performance/production-benchmark.mjs",
     "test:web:bundle": "node apps/web/test/browser-bundle-leak.smoke.mjs",
     "test:web:production": "node apps/web/test/production-start.smoke.mjs",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:package-import && pnpm test && pnpm test:coverage && pnpm test:web:bundle && pnpm test:web:production"
