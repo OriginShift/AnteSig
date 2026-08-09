@@ -111,7 +111,7 @@ describe("GET /api/health", () => {
         name: "antesig",
         version: "0.0.0",
         runtime: "nodejs",
-        nodeVersion: "22.23.1",
+        nodeVersion: process.versions.node,
       },
       moss: {
         sourceMode: "INTEGRATION_FORK",

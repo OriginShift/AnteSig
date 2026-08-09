@@ -7,7 +7,7 @@ export const HealthResponseSchema = z.strictObject({
     name: z.literal("antesig"),
     version: z.literal("0.0.0"),
     runtime: z.literal("nodejs"),
-    nodeVersion: z.literal("22.23.1"),
+    nodeVersion: z.string().regex(/^22\.\d+\.\d+$/),
   }),
   moss: z.strictObject({
     sourceMode: z.literal("INTEGRATION_FORK"),
