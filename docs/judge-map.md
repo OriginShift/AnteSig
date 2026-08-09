@@ -3,15 +3,16 @@
 ## Purpose
 
 This map connects each judging direction to observable evidence and states what
-still must be completed. Source artifacts take precedence over narration.
+still requires human demo or submission proof. Source artifacts take precedence
+over narration.
 
-| Direction | Observable proof | Verified repository evidence | Remaining proof before final claim |
+| Direction | Observable proof | Verified repository evidence | Remaining proof before final submission |
 | --- | --- | --- | --- |
-| Problem is real | A simulation can succeed while an amount mismatch produces `STOP` | Synthetic amount-mismatch fixture, deterministic Alignment and Decision tests, and the M2 non-UI gate | Show the mismatch in the final workbench without presenting Fixture data as live evidence |
-| Users can understand it | User intent, prepared operation, and simulated outcome are compared; every `STOP` reason links to evidence | Presentation sidecar contract and STOP presentation requirements | Complete desktop/mobile three-way comparison, Capability inspector, evidence timeline, accessibility, and comprehension QA |
-| Monad is material | Chain 143, protocol Quote, Moss Capability, simulation, and exact block context are observable | Sanitized PancakeSwap V2 live-smoke evidence through the pinned Moss build | Reproduce current live evidence for release and expose its source context in the UI |
-| Demo is resilient | Live, Fixture, happy, mismatch, RPC-failure, and warning paths remain distinct and recoverable | Strict API contracts and 16-case non-UI matrix with Clear402 absent and disabled | Complete UI E2E, recovery controls, deployment/local-production fallback, and backup video |
-| Team can explain it | A fixed five-minute story follows claim, evidence, limitation, and recovery | Frozen scope, Gate contracts, architecture, and evidence-boundary documents | Finalize the timed script, Q&A, repeated rehearsals, media, links, and submission record |
+| Problem is real | A simulation can succeed while an amount mismatch produces `STOP` | Synthetic amount-mismatch Fixture, deterministic Alignment and Decision tests, Gate A browser evidence, and Gate C | Show the exact final-RC Fixture in the timed demo and state its synthetic provenance |
+| Users can understand it | User intent, prepared operation, and simulated outcome are compared; every `STOP` reason links to evidence | Desktop/mobile three-way comparison, Capability inspector, evidence timeline, accessibility checks, comprehension QA, and final visual QA | Complete real timed rehearsals and record mock-judge comprehension |
+| Monad is material | Chain 143, protocol Quote, Moss Capability, simulation, and exact block context are observable | Gate C records sanitized PancakeSwap V2 live-smoke evidence through the pinned Moss build | Keep the standalone observation distinct from the hosted Web route and link the exact RC evidence in final media |
+| Demo is resilient | Live, Fixture, happy, mismatch, RPC-failure, and warning paths remain distinct and recoverable | Strict API/integration matrices, explicit browser recovery, local production fallback, deployed public smoke, and Gate C | Complete human failure-recovery drills and record the backup video |
+| Team can explain it | A fixed five-minute story follows claim, evidence, limitation, and recovery | Gate contracts, architecture, evidence claims, Known Issues, and the repository demo draft | Finalize the script/Q&A against the immutable RC, rehearse it, audit media links, and capture submission confirmation |
 
 ## Evidence Reading Order
 
@@ -35,8 +36,9 @@ available evidence and that human review must continue.
 - A successful simulation does not prove intent alignment or later execution.
 - A Quote supports selection and is not Receipt or simulation evidence.
 - UI prose and screenshots describe evidence; they do not create it.
-- Clear402, release, deployment, and submission claims remain planned until
-  their own Gates pass and their artifacts exist.
+- Clear402, deployment, and release-acceptance claims are bounded by Gate B and
+  Gate C. The Maintainer RC tag, rehearsal, media, and submission claims remain
+  pending until their own artifacts exist.
 
 ## Source Documents
 
