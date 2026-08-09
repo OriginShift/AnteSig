@@ -310,6 +310,28 @@ for (const clear402Mode of ["ABSENT", "FALSE"] as const) {
         "gate-programming-sentinel",
       );
     });
+
+    it("maps a service deadline to strict 504 with no fake Decision", async () => {
+      const service: PreflightService = {
+        run: () =>
+          Promise.resolve({
+            status: "TIMEOUT",
+            code: "PREFLIGHT_TIMEOUT",
+            message: "integration timeout sentinel",
+          }),
+      };
+      const { body, text } = await errorBody(
+        await handlerFor(service)(requestFrom("happy.json")),
+        504,
+        "PREFLIGHT_TIMEOUT",
+      );
+
+      expect(body.runId).toBe(RUN_ID);
+      expect(text).toContain(
+        "The preflight request exceeded its hard deadline.",
+      );
+      expect(text).not.toContain("integration timeout sentinel");
+    });
   });
 }
 
