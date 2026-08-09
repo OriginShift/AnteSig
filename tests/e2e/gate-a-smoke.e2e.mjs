@@ -83,13 +83,11 @@ async function assertJudgeComprehension(page, decision) {
     await expect(page.locator(".comparison-primary-value > strong")).toHaveText(
       ["1.0", "10.0", "10.0"],
     );
-    await expect(page.locator(".comparison-primary-raw")).toHaveText(
-      [
-        "1000000000000000000 base units",
-        "10000000000000000000 base units",
-        "10000000000000000000 base units",
-      ],
-    );
+    await expect(page.locator(".comparison-primary-raw")).toHaveText([
+      "1000000000000000000 base units",
+      "10000000000000000000 base units",
+      "10000000000000000000 base units",
+    ]);
     await expect(page.locator(".simulation-boundary-note")).toContainText(
       "Success is not permission to sign",
     );

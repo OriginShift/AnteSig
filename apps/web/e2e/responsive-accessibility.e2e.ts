@@ -123,9 +123,9 @@ async function assertColumnOrder(page: Page, mobile: boolean) {
 }
 
 async function assertWorkbenchHintInFirstViewport(page: Page) {
-  const top = await page.locator("#preflight-workbench").evaluate((element) =>
-    element.getBoundingClientRect().top,
-  );
+  const top = await page
+    .locator("#preflight-workbench")
+    .evaluate((element) => element.getBoundingClientRect().top);
   expect(top).toBeLessThan(await page.evaluate(() => window.innerHeight));
 }
 
