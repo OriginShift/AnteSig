@@ -12,8 +12,10 @@ technical compatibility.
 
 ## Current status
 
-This checkout contains the merged M0-M5 implementation through the M5-06
-performance gate. The project is maintained in the public
+This checkout contains the merged M0-M5 implementation through Gate C, public
+deployment acceptance, and final desktop/mobile visual QA. The Maintainer-only
+RC tag is still pending, so this status is not an RC-freeze claim. The project
+is maintained in the public
 [OriginShift/AnteSig repository](https://github.com/OriginShift/AnteSig), and
 the current public demo is [antesig.vercel.app](https://antesig.vercel.app).
 The engineering foundation provides a pnpm workspace with a registered

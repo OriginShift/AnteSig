@@ -1,6 +1,24 @@
-# M5 Security Audit Report
+# M5 Security Audit Report (Historical Pre-Remediation Run)
 
-## Verdict
+## Current Release Resolution
+
+The `NO-GO` below is the preserved result for the exact historical subject
+`6d3eb1e0d82394fd0c2c3a7c08147e5d5cce6cea`. It is not the current release
+verdict.
+
+Dynamic Bug [#102](https://github.com/OriginShift/AnteSig/issues/102) and
+[PR #104](https://github.com/OriginShift/AnteSig/pull/104) remediated the six
+production advisories without suppression. Gate C then re-ran frozen install,
+the production audit, both optional-profile modes, the full quality gate, and
+production smokes at candidate
+`b28116979084719f6f4fa0fd829f3671b4ab28f2`; its current release conclusion is
+[PASS](gate-c-report.md). The production audit also exits successfully with no
+known vulnerabilities on `main@4ec4e2d8c5e8fbbc08572f544461cbd5e1c24d7d`.
+
+This resolution notice does not rewrite the original finding or its exact-SHA
+evidence. Any later dependency change requires a fresh audit.
+
+## Historical Verdict
 
 **NO-GO**
 
@@ -20,7 +38,7 @@ This is a single-operator audit. No independent-review claim is made.
 
 | ID | Priority | Status | Owner | Finding | Reproduction | Required mitigation |
 | --- | --- | --- | --- | --- | --- | --- |
-| SEC-001 | P0 | OPEN / release blocker | Maintainer / dependencies, tracked by [#102](https://github.com/OriginShift/AnteSig/issues/102) | The installed production graph contains 6 advisories: 2 moderate and 4 high. | `ASDF_NODEJS_VERSION=22.23.1 pnpm audit --prod --audit-level=moderate` exits 1. | Resolve to maintained compatible versions without suppressing advisories; require the same command to exit 0 and the full false/true-mode matrix to pass. |
+| SEC-001 | P0 | OPEN at audited SHA; later resolved by #102 | Maintainer / dependencies, tracked by [#102](https://github.com/OriginShift/AnteSig/issues/102) | The installed production graph contains 6 advisories: 2 moderate and 4 high. | `ASDF_NODEJS_VERSION=22.23.1 pnpm audit --prod --audit-level=moderate` exits 1. | Resolve to maintained compatible versions without suppressing advisories; require the same command to exit 0 and the full false/true-mode matrix to pass. |
 
 No additional P0, P1, or P2 defect was confirmed in the audited scope. The
 matrix below records each checked boundary and its evidence; a PASS is bounded
@@ -87,13 +105,17 @@ main quality-gate run 31288125536 at subject SHA: PASS
 The zero Dependabot result must not be reported as a clean dependency state.
 The package-manager audit is reproducible and controls the verdict.
 
-## Gate Decision
+## Historical Gate Decision
 
-Gate C and release-candidate tagging remain **NO-GO** until #102 is merged and
-all of the following are recorded against the remediation head and merged main:
+At this historical subject, Gate C and release-candidate tagging were
+**NO-GO** until #102 merged and all of the following were recorded against the
+remediation head and merged main:
 
 1. production audit exits 0 at the moderate threshold;
 2. frozen installation and full `pnpm check` pass;
 3. Clear402 false and true builds, integration tests, and browser E2E pass;
 4. production start and public health/demo smoke pass; and
 5. the dependency diff contains no advisory suppression or unrelated behavior.
+
+The Current Release Resolution above records that these conditions were later
+satisfied. The Maintainer-only RC tag remains a separate pending action.

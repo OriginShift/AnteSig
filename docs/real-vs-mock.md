@@ -6,13 +6,13 @@ This document separates target-demo evidence requirements from acceptable
 mocked boundaries and from what this repository has actually completed. A
 fixture or mock must never be described as live Moss or Monad evidence.
 
-## Must be real in the target demo
+## Must be real for a Live claim
 
-The target demo must use and identify real sources for:
+A `LIVE_SOURCE` claim must use and identify real sources for:
 
 - approved Monad RPC state or an explicitly identified local fork derived from
   Monad state;
-- Kuru and PancakeSwap quote responses used for protocol comparison;
+- the PancakeSwap V2 quote response used by the bounded P0 live-smoke path;
 - the Capability Tree constructed by Moss;
 - Moss simulation of the unmodified Capability;
 - ordered transaction results and gas observations;
@@ -43,89 +43,54 @@ or Monad RPC evidence.
 
 ## Actually completed in the current repository
 
-The repository contains the M0 baseline:
+The repository contains the governed Node 22/pnpm 11 workspace, accepted report
+and Decision contracts, deterministic Decision Engine, pinned Moss Adapter,
+preflight orchestration and Alignment, optional Clear402 profile, integrated
+Next.js workbench/API, automated tests, public deployment, and Gate A/B/C
+evidence.
 
-- project, architecture, security, real-versus-mock, and governance documents;
-- contribution, security reporting, CODEOWNERS, Issue, and pull request
-  templates;
-- an MIT license; and
-- GitHub repository governance objects and permissions.
+Three report Fixtures are purely synthetic and declare `provenance: FIXTURE`:
 
-This checkout also contains the M1-01 tooling and CI foundation:
+- `manual-review-success.v0.1.json` retains `MANUAL_REVIEW`;
+- `token-out-mismatch.v0.1.json` produces a critical Alignment failure and
+  `STOP`; and
+- `amount-in-mismatch.v0.1.json` keeps synthetic simulation `SUCCESS` while a
+  1-versus-10 amount mismatch produces `STOP`.
 
-- a pnpm workspace with the root project and a registered `packages/*` package
-  boundary;
-- Node 22 and pnpm 11 project constraints;
-- strict no-emit TypeScript validation;
-- Biome formatting and linting;
-- Vitest test-runner infrastructure; and
-- the `quality-gate` GitHub Actions workflow.
+The allowlisted reliability bundles also exercise synthetic RPC failure and
+warning paths. None of these identifiers, Quotes, Capabilities, simulation
+records, Receipts, Outcomes, or source references is chain evidence.
 
-It also contains the M1-02 `PreflightReport` v0.1 runtime schema package. The
-package validates the fixed report contract using only synthetic test inputs;
-it is not a Fixture, report generator, or source of real evidence.
+The integrated Web/API product displays intent, selection, the original
+Capability, simulation evidence, deterministic Alignment, the bounded
+Decision, provenance, raw evidence, and explicit Live-to-Fixture recovery. The
+public deployment runs the named Fixtures. Its hosted Web route has no Live
+session: a valid `LIVE` request returns `LIVE_UNAVAILABLE`, creates no report or
+Decision, and never silently becomes Fixture success.
 
-The repository contains the M1-03 Decision Engine. It is a pure, synchronous,
-deterministic, offline, fail-closed evaluator of strictly validated
-`DecisionInput` data. It returns only structured `MANUAL_REVIEW` or `STOP`
-decisions, performs no I/O, and does not create or strengthen evidence,
-calculate Alignment, or authorize signing or execution.
+Separately, the pinned Moss Adapter live-smoke command has recorded a sanitized
+PancakeSwap V2 Quote, Capability, and simulation observation on `eip155:143` at
+an exact block for Gate C. It is server-only, not connected to the public Web
+route, and never signs, broadcasts, or authorizes a transaction.
 
-The repository also contains three purely synthetic development Fixtures. All
-declare `provenance: FIXTURE`, and every identifier and raw payload is
-synthetic:
-
-- `manual-review-success.v0.1.json` is the favorable Schema Fixture and retains
-  `MANUAL_REVIEW`;
-- `token-out-mismatch.v0.1.json` records a synthetic intended-versus-observed
-  tokenOut mismatch, a critical failed Alignment, and the exact
-  `CRITICAL_ALIGNMENT_FAIL` STOP decision; and
-- `amount-in-mismatch.v0.1.json` records a synthetic 1-versus-10 amountIn
-  mismatch. Its synthetic simulation remains `SUCCESS`, but its critical
-  failed Alignment still produces the exact `CRITICAL_ALIGNMENT_FAIL` STOP
-  decision.
-
-The Fixtures validate the public Schema and Decision Engine boundaries. Their
-identifiers, raw payloads, Quotes, Receipts, Outcomes, simulation records,
-source references, Alignments, and Decisions are synthetic. They are not Moss,
-Monad, protocol, wallet, RPC, or chain evidence. `MANUAL_REVIEW` is not a
-safety conclusion, approval, authorization, execution guarantee, or permission
-to sign. `STOP` is a structured fail-closed result, not proof of safety,
-transaction authorization, or real-chain observation.
-
-The repository also contains a production-buildable and production-startable
-Next.js Web/API baseline. It provides strict versioned API contracts, fixed
-UTF-8 request and response limits, server-generated correlation identifiers, a
-fixed health response, and an offline Fake service. The Fake maps only the
-three allowlisted scenarios to the existing synthetic Fixtures and preserves
-their `FIXTURE` provenance and Decisions. A valid `LIVE` request returns
-`LIVE_UNAVAILABLE` and never falls back to a Fixture.
-
-These engineering, contract, Fixture, Web/API, Fake, build, health, and CI
-artifacts are not an integrated application, Moss or Monad integration, real
-or mocked protocol evidence, a live backend, or a safety guarantee. They do
-not establish any product, chain, evidence, or security capability.
+Clear402 can optionally export and verify an unsigned report-integrity
+credential and detect tampering with the protected report when the stored
+digest is not replaced. It does not authenticate a source or alter evidence,
+Alignment, or Decision. It is disabled on the current public deployment.
 
 The current repository has not implemented or verified:
 
-- an integrated runnable demo, product workflow, or live backend;
-- report generation, orchestration, or application behavior beyond the
-  validated Schema, Decision Engine, and offline Web/API baseline;
-- Moss discovery, loading, action, Capability construction, or simulation;
-- Monad RPC or local-fork connectivity;
-- Kuru or PancakeSwap quotes;
-- Receipt, Outcome, Warning, gas, coverage, or ordering extraction;
-- intent-alignment calculation, report generation, or export;
-- any real address, private key, API key, signing, transaction, or chain
-  integration; or
-- any real receipt, quote, simulation, or other real-chain evidence.
+- a configured hosted Live Web session or public live-chain backend;
+- Kuru or a second-protocol production path;
+- arbitrary operations beyond one structured exact-input Swap;
+- wallet connection, private-key handling, signing, broadcast, or transaction
+  submission;
+- cross-chain operations, Lending, Staking, Vault, or ZK proofs; or
+- signer identity or authenticity for the unsigned Clear402 credential.
 
-There is no integrated live demo. The buildable Web/API baseline is a skeleton
-for later scoped integration work, not evidence that such integration exists.
-
-See [M1 completion evidence and criteria](./m1-completion-evidence.md) for the
-exact-SHA delivery inventory. That inventory supports a later Maintainer
-assessment; it is not proof that M1 is closed.
+The repository therefore contains an integrated Fixture demo plus a separate
+bounded Live observation path. Fixture behavior, public health, CI, and
+screenshots must not be presented as a current Live chain result.
 
 ## Prohibited claims
 
