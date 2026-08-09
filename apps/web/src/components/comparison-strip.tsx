@@ -1,3 +1,4 @@
+import type { Provenance } from "@moss-mini-demo/report-schema";
 import type { ComparisonStripInput } from "../client/comparison-strip";
 import { comparisonColumns } from "../client/comparison-strip";
 
@@ -15,51 +16,112 @@ function SourceReferences({
   );
 }
 
-export function ComparisonStrip(props: ComparisonStripInput) {
+function formattedAmount(value: string): string {
+  if (!/^\d+$/.test(value)) return value;
+  const padded = value.padStart(19, "0");
+  const whole = padded.slice(0, -18);
+  const fraction = padded.slice(-18).replace(/0+$/, "");
+  return `${BigInt(whole)}.${fraction || "0"}`;
+}
+
+function columnTitle(key: "intent" | "prepared" | "simulation"): string {
+  if (key === "intent") return "User intent";
+  if (key === "prepared") return "Agent prepared";
+  return "Simulation observed";
+}
+
+export function ComparisonStrip({
+  provenance,
+  ...props
+}: ComparisonStripInput & Readonly<{ provenance: Provenance }>) {
   const columns = comparisonColumns(props);
   return (
     <section className="comparison-strip" aria-labelledby="comparison-heading">
       <div className="section-heading">
+        <span className="section-index" aria-hidden="true">
+          03
+        </span>
         <div>
-          <h3 id="comparison-heading">Three-way comparison</h3>
+          <h3 aria-label="Three-way comparison" id="comparison-heading">
+            Source-bound values
+          </h3>
           <p>
             Request, prepared Capability and observed Simulation stay distinct
           </p>
         </div>
       </div>
       <div className="comparison-columns">
-        {columns.map((column) => (
-          <section
-            className={`comparison-column ${column.key}`}
-            key={column.key}
-          >
-            <header>
-              <span className="comparison-column-index" aria-hidden="true">
-                {column.key === "intent"
-                  ? "1"
-                  : column.key === "prepared"
-                    ? "2"
-                    : "3"}
-              </span>
-              <div>
-                <h4>{column.title}</h4>
-                <p>{column.description}</p>
-              </div>
-            </header>
-            <dl>
-              {column.items.map((entry) => (
-                <div key={entry.label}>
-                  <dt>{entry.label}</dt>
-                  <dd>
-                    <strong>{entry.value}</strong>
-                    <SourceReferences references={entry.sourceReferences} />
-                  </dd>
+        {columns.map((column) => {
+          const amountLabel =
+            column.key === "simulation" ? "Amount in observed" : "Amount in";
+          const amount = column.items.find(
+            (entry) => entry.label === amountLabel,
+          );
+          const detailItems = column.items.filter(
+            (entry) => entry.label !== amountLabel,
+          );
+
+          return (
+            <section
+              className={`comparison-column ${column.key}`}
+              key={column.key}
+            >
+              <header>
+                <span className="comparison-column-index" aria-hidden="true">
+                  {column.key === "intent"
+                    ? "01"
+                    : column.key === "prepared"
+                      ? "02"
+                      : "03"}
+                </span>
+                <div>
+                  <h4>{columnTitle(column.key)}</h4>
+                  <p>{column.description}</p>
                 </div>
-              ))}
-            </dl>
-          </section>
-        ))}
+              </header>
+
+              <div className="comparison-primary-value">
+                <span className="comparison-primary-label">
+                  {amount?.label ?? amountLabel}
+                </span>
+                <strong>
+                  {amount === undefined
+                    ? "not present"
+                    : formattedAmount(amount.value)}
+                </strong>
+                {amount === undefined ? null : (
+                  <>
+                    <em className="comparison-primary-unit">NATIVE</em>
+                    <small className="comparison-primary-raw">
+                      {amount.value} base units
+                    </small>
+                    <SourceReferences references={amount.sourceReferences} />
+                  </>
+                )}
+              </div>
+
+              <details className="comparison-details">
+                <summary>Inspect source-bound fields</summary>
+                <dl>
+                  {detailItems.map((entry) => (
+                    <div key={entry.label}>
+                      <dt>{entry.label}</dt>
+                      <dd>
+                        <strong>{entry.value}</strong>
+                        <SourceReferences references={entry.sourceReferences} />
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </details>
+            </section>
+          );
+        })}
       </div>
+      <footer className="comparison-footer">
+        <a href="#alignment-list">Trace source references →</a>
+        <span className="comparison-provenance">Provenance · {provenance}</span>
+      </footer>
     </section>
   );
 }

@@ -28,14 +28,20 @@ export function DecisionBanner({
           </span>
         ) : null}
         {model.limitations.length > 0 ? (
-          <ul className="decision-limitations">
-            {model.limitations.map((limitation) => (
-              <li key={limitation.code}>
-                <strong>{limitation.code}</strong>
-                <span>{limitation.description}</span>
-              </li>
-            ))}
-          </ul>
+          <details className="decision-limitations">
+            <summary>
+              Limitations ·{" "}
+              {model.limitations.length.toString().padStart(2, "0")}
+            </summary>
+            <ul className="decision-limitations-list">
+              {model.limitations.map((limitation) => (
+                <li key={limitation.code}>
+                  <strong>{limitation.code}</strong>
+                  <span>{limitation.description}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
         ) : null}
       </div>
       <span className="decision-value">{model.status}</span>

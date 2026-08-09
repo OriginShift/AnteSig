@@ -102,6 +102,9 @@ export function CapabilityInspector({
       aria-labelledby="capability-heading"
     >
       <div className="section-heading evidence-heading">
+        <span className="section-index" aria-hidden="true">
+          04
+        </span>
         <div>
           <h3 id="capability-heading">Capability inspector</h3>
           <p>Hierarchy and transaction order from API evidence</p>
@@ -118,9 +121,32 @@ export function CapabilityInspector({
           <CapabilityNode node={model.root} />
         </ol>
       ) : model.availability === "AVAILABLE" ? (
-        <div className="evidence-empty">
-          <strong>Structured hierarchy not present</strong>
-          <SourceReferences references={[model.sourceReference]} />
+        <div className="evidence-empty capability-raw-summary">
+          <div className="capability-summary-heading">
+            <span>Agent prepared</span>
+            <strong>{model.availability}</strong>
+          </div>
+          <dl className="capability-highlight-list">
+            {model.rawHighlights.map((highlight) => (
+              <div
+                className={
+                  highlight.label === "amountIn" ? "amount-highlight" : ""
+                }
+                key={highlight.sourceReference}
+              >
+                <dt>{highlight.label}</dt>
+                <dd>
+                  <strong>{highlight.value}</strong>
+                  <SourceReferences references={[highlight.sourceReference]} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <div className="capability-preserved-artifact">
+            <span>Original raw artifact preserved</span>
+            <strong>Structured hierarchy not present</strong>
+            <SourceReferences references={[model.sourceReference]} />
+          </div>
         </div>
       ) : (
         <div className="evidence-empty failed">

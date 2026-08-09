@@ -5,6 +5,8 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 const SCREENSHOTS = resolve("artifacts/screenshots");
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
+const COMPACT_DESKTOP = { width: 1280, height: 720 };
+const COMPACT_MOBILE = { width: 360, height: 800 };
 const WRITE_SCREENSHOTS = process.env.E2E_WRITE_SCREENSHOTS !== "0";
 
 async function runFixture(page: Page, name: "Happy path" | "Amount mismatch") {
@@ -120,6 +122,13 @@ async function assertColumnOrder(page: Page, mobile: boolean) {
   }
 }
 
+async function assertWorkbenchHintInFirstViewport(page: Page) {
+  const top = await page
+    .locator("#preflight-workbench")
+    .evaluate((element) => element.getBoundingClientRect().top);
+  expect(top).toBeLessThan(await page.evaluate(() => window.innerHeight));
+}
+
 async function contrastRatio(locator: Locator): Promise<number> {
   return locator.evaluate((element) => {
     const rgb = (value: string) => {
@@ -192,6 +201,14 @@ async function assertKeyboardDrawer(page: Page) {
 async function captureScreenshot(page: Page, filename: string) {
   if (!WRITE_SCREENSHOTS) return;
 
+  await page.evaluate(() => window.scrollTo({ left: 0, top: 0 }));
+  await page.evaluate(async () => {
+    await Promise.all(
+      document
+        .getAnimations()
+        .map((animation) => animation.finished.catch(() => undefined)),
+    );
+  });
   const runIds = page.locator('[data-run-id="true"]');
   for (let index = 0; index < (await runIds.count()); index += 1) {
     await runIds.nth(index).evaluate((element) => {
@@ -221,7 +238,9 @@ test("responsive desktop happy", async ({ page }) => {
   ).toBe(true);
   await assertColumnOrder(page, false);
   await assertNoOverflowOrOverlap(page);
+  await assertWorkbenchHintInFirstViewport(page);
   await captureScreenshot(page, "mini-desktop-happy.png");
+  await captureScreenshot(page, "visual-1440x900-happy.png");
 });
 
 test("responsive desktop stop", async ({ page }) => {
@@ -244,7 +263,9 @@ test("responsive mobile happy", async ({ page }) => {
   await runFixture(page, "Happy path");
   await assertColumnOrder(page, true);
   await assertNoOverflowOrOverlap(page);
+  await assertWorkbenchHintInFirstViewport(page);
   await captureScreenshot(page, "mini-mobile-happy.png");
+  await captureScreenshot(page, "visual-390x844-happy.png");
 });
 
 test("responsive mobile stop", async ({ page }) => {
@@ -259,6 +280,24 @@ test("responsive mobile stop", async ({ page }) => {
   await assertColumnOrder(page, true);
   await assertNoOverflowOrOverlap(page);
   await captureScreenshot(page, "mini-mobile-stop.png");
+});
+
+test("fixed compact desktop stop", async ({ page }) => {
+  await page.setViewportSize(COMPACT_DESKTOP);
+  await runFixture(page, "Amount mismatch");
+  await assertColumnOrder(page, false);
+  await assertNoOverflowOrOverlap(page);
+  await assertWorkbenchHintInFirstViewport(page);
+  await captureScreenshot(page, "visual-1280x720-stop.png");
+});
+
+test("fixed compact mobile stop", async ({ page }) => {
+  await page.setViewportSize(COMPACT_MOBILE);
+  await runFixture(page, "Amount mismatch");
+  await assertColumnOrder(page, true);
+  await assertNoOverflowOrOverlap(page);
+  await assertWorkbenchHintInFirstViewport(page);
+  await captureScreenshot(page, "visual-360x800-stop.png");
 });
 
 test("accessibility controls, keyboard, focus, contrast and reduced motion", async ({

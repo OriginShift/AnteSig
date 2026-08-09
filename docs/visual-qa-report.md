@@ -3,7 +3,7 @@
 ## Conclusion
 
 SINGLE_OPERATOR_QA was executed on 2026-08-09 against exact candidate
-`1842769004c044efa9e4414aa1c2df1ca0123629`.
+`4e4611eaf6e2b761a68ab9111289df1c50456308`.
 
 Conclusion: PASS
 
@@ -16,13 +16,13 @@ single-operator workflow.
 ## Candidate and method
 
 - Repository: <https://github.com/OriginShift/AnteSig>
-- Exact checkout: `1842769004c044efa9e4414aa1c2df1ca0123629`
-- Deployed RC: <https://antesig.vercel.app>
+- Exact product-code checkout: `4e4611eaf6e2b761a68ab9111289df1c50456308`
+- Deployment: pending merge; screenshots use the exact local production build
 - Node.js: `v22.23.1`
 - pnpm: `11.16.0`
 - Runtime profile: `CLEAR402_ENABLED=false`
 
-The application was built and served from the exact local checkout. Browser
+The application was built and served from the exact product-code checkout. Browser
 screenshots were captured from that production build, not from a prior build or
 an unrelated URL. Dynamic run IDs were replaced with the stable
 `run_redacted-for-stable-qa` marker before capture; no other visible evidence
@@ -42,11 +42,12 @@ result viewport and the long-form evidence below it.
 
 ## Automated evidence
 
-`pnpm test:e2e --grep 'visual|responsive'` passed against the production server:
-8 tests passed and 2 Clear402-enabled-only tests were skipped as required by
-the disabled runtime profile. The matched suite covered desktop/mobile happy
-and STOP paths, accessible controls, loading stability, disabled-profile
-isolation, and explicit Live-failure recovery.
+`pnpm test:e2e --grep 'responsive|fixed compact|accessibility'` passed against
+the production server: 10 tests passed and 2 Clear402-enabled-only tests were
+skipped as required by the disabled runtime profile. The matched suite covered
+desktop/mobile happy and STOP paths, all four fixed screenshot viewports,
+accessible controls, loading stability, disabled-profile isolation, and
+explicit Live-failure recovery.
 
 An additional exact-candidate Playwright audit covered all four fixed
 viewports. Every viewport reported:
