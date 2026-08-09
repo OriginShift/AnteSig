@@ -106,7 +106,7 @@ repair, suppress, reorder, or strengthen evidence.
 RC tag:                       BLOCKED BY #59
 RC commit:                    BLOCKED BY #59
 90-second backup video URL:   BLOCKED BY #62/#63
-Full demo video URL:          BLOCKED BY #62/#63
+Three-minute demo video URL:  BLOCKED BY #62/#63
 Submission URL:               BLOCKED BY #63/#64
 Submission confirmation:      BLOCKED BY #63/#64
 ```

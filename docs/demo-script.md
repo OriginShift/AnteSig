@@ -1,10 +1,10 @@
-# AnteSig Five-Minute Demo
+# AnteSig Three-Minute Demo
 
-## Draft Status
+## Release Subject
 
-This script is drafted against `main@34f64df97c510a82a700c7b18bf0c0e0009a0aa2`.
-Final timing approval and replacement of that SHA with the immutable RC tag are
-blocked by Maintainer-only [Issue #59](https://github.com/OriginShift/AnteSig/issues/59).
+This script is fixed to annotated RC tag `hackathon-rc-2026-08-05`, peeled
+commit `34f64df97c510a82a700c7b18bf0c0e0009a0aa2`. Automated evidence is
+complete; real presenter timing and review remain owned by Issue #62.
 
 ## Presenter Setup
 
@@ -20,18 +20,18 @@ blocked by Maintainer-only [Issue #59](https://github.com/OriginShift/AnteSig/is
 
 ## Primary Timed Run
 
-The spoken text is intentionally bounded to the fixed five-minute structure.
+The spoken text is intentionally bounded to the fixed three-minute structure.
 Operator actions are not part of the narration.
 
 | Time | Operator action | Say | Evidence |
 | --- | --- | --- | --- |
-| 00:00-00:35 | Start on the AnteSig workbench. Point to `User request`, `Agent prepared`, and `Simulation occurred`. | "An AI agent can prepare an operation that simulates successfully and still violates what its user asked for. Reviewing raw JSON under time pressure makes that difference easy to miss. AnteSig puts the request, prepared operation, simulation evidence, deterministic alignment, and bounded decision in one preflight view before wallet review. It never signs or sends a transaction." | [Product brief](project-brief.md), [security boundary](security-boundary.md) |
-| 00:35-01:05 | Point to the Monad network, provenance, and Moss build facts. | "AnteSig is the application and policy layer. Monad is the recorded chain context. Moss supplies the pinned protocol capability and simulation boundary. Clear402 is optional and comes only after the report as an unsigned integrity envelope. Those responsibilities do not replace one another, and display text is never treated as evidence." | [Architecture](architecture.md), [Moss dependency](moss-dependency.md), [Clear402 ADR](adr/0005-clear402-monad-action-credential-v0-1.md) |
-| 01:05-02:10 | Select `Fixture`, `Happy path`, then `Run preflight`. Show provenance, comparison, Capability, evidence, Alignment, and the banner. | "This is the named Happy path synthetic Fixture, not Live chain evidence. The request is an exact-input Swap. AnteSig records the Quote and selected protocol, preserves the original Capability, and compares the requested, prepared, and simulated values. Here every critical check passes and the Decision is `MANUAL_REVIEW`. That means only that no defined stop condition was detected in the available evidence. Human review is still required; this is not approval, authorization, or permission to sign." | [Gate A](gate-a-report.md), [evidence claim map](evidence-claims.md), [Decision Engine tests](../packages/decision-engine/test/evaluate.test.ts) |
-| 02:10-03:20 | Select `Amount mismatch`, run, then show `Why STOP`, the 1-versus-10 comparison, source references, and action boundary. | "Now this second synthetic Fixture keeps simulation status `SUCCESS`, but the user requested one base unit and the prepared operation uses ten. Simulation success is not intent match. Deterministic Alignment records the mismatch and the Decision Engine returns `STOP` with `CRITICAL_ALIGNMENT_FAIL`. The source pointers remain inspectable, and the visible boundary is `DO_NOT_PROCEED_TO_SIGNER`. A Quote supported selection; it did not prove execution or alignment. AnteSig does not repair or hide the adverse evidence." | [Amount mismatch Fixture](../packages/report-schema/fixtures/amount-in-mismatch.v0.1.json), [STOP requirements](stop-presentation.md), [Gate C](gate-c-report.md) |
-| 03:20-04:15 | In the enabled build, return to Happy path. Export, verify, tamper a copy, and verify again. | "Clear402 wraps the completed report without changing its evidence or Decision. The original export verifies because its schema-valid report matches the stored RFC 8785 SHA-256 digest. I tamper only with a copy; verification now reports a digest mismatch. This is unsigned integrity evidence. Anyone replacing the report can also replace an unkeyed digest, so it proves neither identity nor authenticity, safety, freshness, or authorization." | [Gate B](gate-b-report.md), [credential verifier](../packages/clear402-profile/src/integrity.ts), [Clear402 controls](../apps/web/src/components/credential-actions.tsx) |
-| 04:15-04:45 | Return to the evidence ledger and raw-evidence controls. | "The technical contribution is the evidence boundary: strict runtime contracts, deterministic fail-closed decisions, immutable Capability and raw evidence, explicit Fixture-versus-Live provenance, and an optional credential that cannot influence the core report. The release gate also covers desktop and mobile flows, dependency audit, local fallback, public smoke, and a sanitized standalone Live observation." | [Gate C](gate-c-report.md), [architecture](architecture.md), [release runbook](release-runbook.md) |
-| 04:45-05:00 | Finish on the STOP banner. | "Next work can add a configured hosted Live session and stronger attestation profiles. Today the bounded result is simpler: make intent mismatch visible before wallet review, preserve the evidence, and stop when a mandatory condition fails." | [Known Issues](known-issues.md), [hackathon scope](hackathon-scope.md) |
+| 00:00-00:20 | Start on the workbench and point to the three comparison columns. | "An AI agent can prepare an operation that simulates successfully and still violates its user's request. AnteSig compares the request, prepared operation, simulation, Alignment, and bounded Decision before wallet review. It never signs or sends." | [Product brief](project-brief.md), [security boundary](security-boundary.md) |
+| 00:20-00:40 | Point to Monad, provenance, and Moss build facts. | "AnteSig owns the review workflow. Monad is the recorded chain context. Moss supplies the pinned Capability and simulation boundary. Clear402 comes only after the report as optional unsigned integrity evidence." | [Architecture](architecture.md), [Moss dependency](moss-dependency.md), [Clear402 ADR](adr/0005-clear402-monad-action-credential-v0-1.md) |
+| 00:40-01:20 | Select `Fixture`, `Happy path`, then `Run preflight`. Show provenance, comparison, Alignment, and the banner. | "This is the named Happy path synthetic Fixture, not Live chain evidence. AnteSig preserves the original Capability and compares requested, prepared, and simulated values. Every critical check passes, so the Decision is `MANUAL_REVIEW`. That means only that no defined stop condition was detected. Human review remains required; this is not approval or authorization." | [Gate A](gate-a-report.md), [evidence claim map](evidence-claims.md), [Decision Engine tests](../packages/decision-engine/test/evaluate.test.ts) |
+| 01:20-02:05 | Select `Amount mismatch`, run, then show the 1-versus-10 comparison, source references, and action boundary. | "This synthetic Fixture keeps simulation `SUCCESS`, but the user requested one base unit and the prepared operation uses ten. Simulation success is not intent match. Alignment records the mismatch and the Decision Engine returns `STOP` with `CRITICAL_ALIGNMENT_FAIL`. The evidence pointers stay inspectable, and the boundary is `DO_NOT_PROCEED_TO_SIGNER`." | [Amount mismatch Fixture](../packages/report-schema/fixtures/amount-in-mismatch.v0.1.json), [STOP requirements](stop-presentation.md), [Gate C](gate-c-report.md) |
+| 02:05-02:35 | In the enabled build, return to Happy path. Export, verify, tamper a copy, and verify again. | "Clear402 wraps the completed report without changing its Decision. The original verifies; the tampered copy produces a digest mismatch. This is unsigned consistency evidence, not identity, authentication, safety, freshness, or authorization." | [Gate B](gate-b-report.md), [credential verifier](../packages/clear402-profile/src/integrity.ts), [Clear402 controls](../apps/web/src/components/credential-actions.tsx) |
+| 02:35-02:55 | Return to the evidence ledger and raw-evidence controls. | "The contribution is a strict evidence boundary: deterministic fail-closed decisions, immutable Capability and raw evidence, explicit Fixture-versus-Live provenance, and an optional credential that cannot influence the core report." | [Gate C](gate-c-report.md), [architecture](architecture.md), [release runbook](release-runbook.md) |
+| 02:55-03:00 | Finish on the STOP banner. | "AnteSig makes intent mismatch visible before wallet review and stops when mandatory evidence fails." | [Known Issues](known-issues.md), [hackathon scope](hackathon-scope.md) |
 
 ## Failure-Recovery Cues
 
@@ -44,28 +44,27 @@ Operator actions are not part of the narration.
 
 ## Public Fallback Script
 
-Use the same `00:00-03:20` and `04:15-05:00` narration above. During
-`03:20-04:15`, point to the `disabled` profile indicator and say:
+Use the same `00:00-02:05` and `02:35-03:00` narration above. During
+`02:05-02:35`, point to the `disabled` profile indicator and say:
 
 > "This public deployment intentionally has Clear402 disabled, so no Credential
-> control or credential-bearing response is present. The optional enabled-mode
-> release matrix separately proves export, valid verification, and tamper
-> detection without changing the report or Decision. I am not presenting that
-> test evidence as an action performed in this fallback session. Clear402
-> remains an unsigned consistency check, not authentication or authorization."
+> control is present. The enabled release matrix separately proves export,
+> verification, and tamper detection without changing the report or Decision.
+> Clear402 remains unsigned consistency evidence, not authentication or
+> authorization."
 
-This fallback remains within the same five-minute window and does not depend on
-screenshots, video, a terminal, Live availability, or hidden Fixture recovery.
+This fallback remains within the same three-minute window and does not depend
+on screenshots, video, a terminal, Live availability, or hidden recovery.
 
 ## Timing And Fact Review
 
-- [ ] Three normal-pace readings finish at or below 5:00; record them only in
+- [ ] Three normal-pace readings finish at or below 3:00; record them only in
       the human rehearsal log owned by Issue #62.
 - [ ] Product reviewer confirms the problem, audience, and demo sequence.
 - [ ] Technical reviewer checks every displayed control and linked artifact
       against the exact RC.
 - [ ] Security reviewer confirms provenance, `MANUAL_REVIEW`, `STOP`, and
       Clear402 wording.
-- [ ] Replace the draft SHA with the immutable RC tag and commit after #59.
+- [ ] Confirm the shown build and final media identify the exact RC tag.
 - [ ] Do not claim a rehearsal, review, recording, or submission occurred until
       its external evidence exists.
