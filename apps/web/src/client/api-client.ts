@@ -1,9 +1,21 @@
 import {
   MAX_PREFLIGHT_RESPONSE_BYTES,
+  type PreflightErrorResponse,
   type PreflightRequest,
-  type PreflightResponse,
+  type PreflightSuccessResponse,
   PreflightResponseSchema,
 } from "../contracts/preflight";
+import {
+  type Clear402EnabledPreflightSuccessResponse,
+  Clear402EnabledPreflightSuccessResponseSchema,
+} from "../contracts/clear402";
+
+export type PreflightClientSuccessResponse =
+  | PreflightSuccessResponse
+  | Clear402EnabledPreflightSuccessResponse;
+export type PreflightClientResponse =
+  | PreflightErrorResponse
+  | PreflightClientSuccessResponse;
 
 export type PreflightClientErrorKind =
   | "ABORTED"
@@ -50,7 +62,7 @@ function declaredResponseTooLarge(response: Response): boolean {
 export async function requestPreflight(
   request: PreflightRequest,
   options: PreflightClientOptions = {},
-): Promise<PreflightResponse> {
+): Promise<PreflightClientResponse> {
   const fetcher = options.fetcher ?? fetch;
   const timeoutController = new AbortController();
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -89,7 +101,10 @@ export async function requestPreflight(
       throw invalidResponse();
     }
 
-    const parsed = PreflightResponseSchema.safeParse(json);
+    const baseline = PreflightResponseSchema.safeParse(json);
+    const enabled =
+      Clear402EnabledPreflightSuccessResponseSchema.safeParse(json);
+    const parsed = baseline.success ? baseline : enabled;
     if (!parsed.success || response.ok !== parsed.data.ok) {
       throw invalidResponse();
     }

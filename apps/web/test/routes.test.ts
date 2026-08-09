@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { verifyClear402CredentialV0_1 } from "@moss-mini-demo/clear402-profile";
 import {
   PreflightReportSchema,
   type PreflightReport,
@@ -8,6 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import { GET as getHealth } from "../app/api/health/route";
 import { POST as postPreflight } from "../app/api/preflight/route";
 import { HealthResponseSchema } from "../src/contracts/health";
+import { Clear402EnabledPreflightSuccessResponseSchema } from "../src/contracts/clear402";
 import {
   MAX_PREFLIGHT_REQUEST_BYTES,
   MAX_PREFLIGHT_RESPONSE_BYTES,
@@ -16,6 +18,10 @@ import {
   RunIdSchema,
 } from "../src/contracts/preflight";
 import { FakePreflightService } from "../src/server/fake-preflight-service";
+import {
+  type CredentialService,
+  OfflineCredentialService,
+} from "../src/server/credential-service";
 import { createPreflightHandler } from "../src/server/preflight-handler";
 import type { PreflightService } from "../src/server/preflight-service";
 
@@ -51,12 +57,16 @@ function jsonRequest(
   });
 }
 
-function createFakeHandler(generateRunId = vi.fn(() => RUN_ID)) {
+function createFakeHandler(
+  generateRunId = vi.fn(() => RUN_ID),
+  credentialService?: CredentialService,
+) {
   return {
     generateRunId,
     handler: createPreflightHandler({
       service: new FakePreflightService(),
       generateRunId,
+      credentialService,
     }),
   };
 }
@@ -98,10 +108,10 @@ describe("GET /api/health", () => {
       contractVersion: "0.1",
       status: "ok",
       app: {
-        name: "moss-mini-demo",
+        name: "antesig",
         version: "0.0.0",
         runtime: "nodejs",
-        nodeVersion: "22.23.1",
+        nodeVersion: process.versions.node,
       },
       moss: {
         sourceMode: "INTEGRATION_FORK",
@@ -156,7 +166,86 @@ describe("POST /api/preflight", () => {
       },
     });
     expect(body.presentation.reportId).toBe(body.report.reportId);
+    expect(body).not.toHaveProperty("clear402");
     expect(generateRunId).toHaveBeenCalledTimes(1);
+  });
+
+  it("adds a valid credential only after a valid report when enabled", async () => {
+    const service = new OfflineCredentialService();
+    const generate = vi.spyOn(service, "generate");
+    const { handler } = createFakeHandler(
+      vi.fn(() => RUN_ID),
+      service,
+    );
+    const response = await handler(
+      jsonRequest(
+        JSON.stringify({
+          contractVersion: "0.1",
+          mode: "FIXTURE",
+          scenario: "manual-review-success",
+        }),
+      ),
+    );
+    const body = Clear402EnabledPreflightSuccessResponseSchema.parse(
+      await response.json(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(body.clear402.status).toBe("AVAILABLE");
+    if (body.clear402.status !== "AVAILABLE") {
+      throw new Error("Expected generated Clear402 credential");
+    }
+    expect(
+      verifyClear402CredentialV0_1(body.clear402.credential),
+    ).toMatchObject({ valid: true, integrity: "VALID" });
+    expect(body.clear402.credential.report).toEqual(body.report);
+    expect(generate).toHaveBeenCalledOnce();
+    expect(generate).toHaveBeenCalledWith(body.report);
+  });
+
+  it("keeps the original report Decision when credential generation fails", async () => {
+    const logger = { error: vi.fn() };
+    const credentialService: CredentialService = {
+      generate: () => {
+        throw new Error("private generation detail");
+      },
+    };
+    const handler = createPreflightHandler({
+      service: new FakePreflightService(),
+      generateRunId: () => RUN_ID,
+      credentialService,
+      logger,
+    });
+    const response = await handler(
+      jsonRequest(
+        JSON.stringify({
+          contractVersion: "0.1",
+          mode: "FIXTURE",
+          scenario: "amount-in-mismatch",
+        }),
+      ),
+    );
+    const text = await response.text();
+    const body = Clear402EnabledPreflightSuccessResponseSchema.parse(
+      JSON.parse(text),
+    );
+
+    expect(response.status).toBe(200);
+    expect(body.report.decision.status).toBe("STOP");
+    expect(body.presentation.decision.status).toBe("STOP");
+    expect(body.clear402).toEqual({
+      status: "ERROR",
+      error: {
+        code: "CREDENTIAL_GENERATION_FAILED",
+        message: "The Clear402 credential could not be generated.",
+      },
+    });
+    expect(text).not.toContain("private generation detail");
+    expect(logger.error).toHaveBeenCalledWith({
+      event: "CLEAR402_GENERATION_ERROR",
+      runId: RUN_ID,
+      code: "CREDENTIAL_GENERATION_FAILED",
+    });
   });
 
   it("returns LIVE_UNAVAILABLE and never falls back to Fixture", async () => {
@@ -396,18 +485,57 @@ describe("POST /api/preflight", () => {
   });
 
   it("composes the production route with a valid generated runId", async () => {
-    const response = await postPreflight(
-      jsonRequest(
-        JSON.stringify({
-          contractVersion: "0.1",
-          mode: "FIXTURE",
-          scenario: "manual-review-success",
-        }),
-      ),
-    );
-    const body = await response.json();
-    expect(response.status).toBe(200);
-    expect(RunIdSchema.safeParse(body.runId).success).toBe(true);
-    expect(PreflightResponseSchema.safeParse(body).success).toBe(true);
+    const previous = process.env.CLEAR402_ENABLED;
+    try {
+      process.env.CLEAR402_ENABLED = "false";
+      const response = await postPreflight(
+        jsonRequest(
+          JSON.stringify({
+            contractVersion: "0.1",
+            mode: "FIXTURE",
+            scenario: "manual-review-success",
+          }),
+        ),
+      );
+      const body = await response.json();
+      expect(response.status).toBe(200);
+      expect(RunIdSchema.safeParse(body.runId).success).toBe(true);
+      expect(PreflightResponseSchema.safeParse(body).success).toBe(true);
+      expect(body).not.toHaveProperty("clear402");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.CLEAR402_ENABLED;
+      } else {
+        process.env.CLEAR402_ENABLED = previous;
+      }
+    }
+  });
+
+  it("composes the production route with Clear402 when exactly enabled", async () => {
+    const previous = process.env.CLEAR402_ENABLED;
+    try {
+      process.env.CLEAR402_ENABLED = "true";
+      const response = await postPreflight(
+        jsonRequest(
+          JSON.stringify({
+            contractVersion: "0.1",
+            mode: "FIXTURE",
+            scenario: "manual-review-success",
+          }),
+        ),
+      );
+      const body = Clear402EnabledPreflightSuccessResponseSchema.parse(
+        await response.json(),
+      );
+      expect(response.status).toBe(200);
+      expect(RunIdSchema.safeParse(body.runId).success).toBe(true);
+      expect(body.clear402.status).toBe("AVAILABLE");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.CLEAR402_ENABLED;
+      } else {
+        process.env.CLEAR402_ENABLED = previous;
+      }
+    }
   });
 });

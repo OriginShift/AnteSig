@@ -1,0 +1,23 @@
+{
+  "name": "@moss-mini-demo/clear402-profile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run test",
+    "test:coverage": "vitest run test --coverage.enabled --coverage.provider=v8 --coverage.include=src/**/*.ts --coverage.thresholds.100"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.2.0",
+    "@moss-mini-demo/report-schema": "workspace:*",
+    "canonicalize": "3.0.0",
+    "zod": "4.4.3"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "status": "STOP",
+  "reasons": [
+    {
+      "code": "WARNING_PRESENT",
+      "sourceReferences": ["/simulation/warnings/items/0"]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import type {
   Capability,
   Limitation,
+  Provenance,
   Simulation,
 } from "@moss-mini-demo/report-schema";
 
@@ -43,6 +44,14 @@ function nested(value: unknown, path: readonly string[]): unknown {
 
 export function serializeRawArtifact(artifact: unknown): string {
   return JSON.stringify(artifact, null, 2);
+}
+
+export function provenanceBoundRawArtifact(
+  provenance: Provenance,
+  section: "capability" | "simulation",
+  artifact: Capability | Simulation,
+): Readonly<Record<string, unknown>> {
+  return Object.freeze({ provenance, [section]: artifact });
 }
 
 export type CapabilityRiskLabel = Readonly<{

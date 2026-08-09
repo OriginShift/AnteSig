@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Clear402EnabledPreflightSuccessResponseSchema } from "../../apps/web/src/contracts/clear402";
 import { GET as getHealth } from "../../apps/web/app/api/health/route";
 import { HealthResponseSchema } from "../../apps/web/src/contracts/health";
 import {
@@ -6,6 +7,10 @@ import {
   PreflightResponseSchema,
   RunIdSchema,
 } from "../../apps/web/src/contracts/preflight";
+import {
+  type CredentialService,
+  OfflineCredentialService,
+} from "../../apps/web/src/server/credential-service";
 import {
   createPreflightHandler,
   type PreflightHandlerLogger,
@@ -96,11 +101,13 @@ function requestFrom(name: RequestFixture): Request {
 function handlerFor(
   service: PreflightService,
   logger?: PreflightHandlerLogger,
+  credentialService?: CredentialService,
 ) {
   return createPreflightHandler({
     service,
     generateRunId: () => RUN_ID,
     logger,
+    credentialService,
   });
 }
 
@@ -303,5 +310,123 @@ for (const clear402Mode of ["ABSENT", "FALSE"] as const) {
         "gate-programming-sentinel",
       );
     });
+
+    it("maps a service deadline to strict 504 with no fake Decision", async () => {
+      const service: PreflightService = {
+        run: () =>
+          Promise.resolve({
+            status: "TIMEOUT",
+            code: "PREFLIGHT_TIMEOUT",
+            message: "integration timeout sentinel",
+          }),
+      };
+      const { body, text } = await errorBody(
+        await handlerFor(service)(requestFrom("happy.json")),
+        504,
+        "PREFLIGHT_TIMEOUT",
+      );
+
+      expect(body.runId).toBe(RUN_ID);
+      expect(text).toContain(
+        "The preflight request exceeded its hard deadline.",
+      );
+      expect(text).not.toContain("integration timeout sentinel");
+    });
   });
 }
+
+describe("non-UI gate with CLEAR402_ENABLED true", () => {
+  let hadPreviousValue: boolean;
+  let previousValue: string | undefined;
+
+  beforeEach(() => {
+    hadPreviousValue = Object.hasOwn(testEnvironment, "CLEAR402_ENABLED");
+    previousValue = testEnvironment.CLEAR402_ENABLED;
+    testEnvironment.CLEAR402_ENABLED = "true";
+  });
+
+  afterEach(() => {
+    if (hadPreviousValue) {
+      testEnvironment.CLEAR402_ENABLED = previousValue;
+    } else {
+      delete testEnvironment.CLEAR402_ENABLED;
+    }
+  });
+
+  it("reports the enabled mode without exposing configuration", async () => {
+    const response = await getHealth();
+    expect(response.status).toBe(200);
+    const body = HealthResponseSchema.parse(await response.json());
+    expect(body.clear402).toEqual({ enabled: true });
+    expect(JSON.stringify(body)).not.toMatch(
+      /credential|digest|rpc_url|secret/i,
+    );
+  });
+
+  it("appends a verifiable credential after the unchanged Fixture report", async () => {
+    const baselineResponse = await fixtureHandler()(requestFrom("happy.json"));
+    const baseline = await successfulBody(baselineResponse);
+    const response = await handlerFor(
+      fixtureService,
+      undefined,
+      new OfflineCredentialService(),
+    )(requestFrom("happy.json"));
+    const body = Clear402EnabledPreflightSuccessResponseSchema.parse(
+      await response.json(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(body.report).toEqual(baseline.report);
+    expect(body.presentation).toEqual(baseline.presentation);
+    expect(body.clear402.status).toBe("AVAILABLE");
+    if (body.clear402.status !== "AVAILABLE") {
+      throw new Error("Expected an available Clear402 credential");
+    }
+    expect(body.clear402.credential.report).toEqual(body.report);
+
+    const mixedProvenance = {
+      ...body,
+      clear402: {
+        ...body.clear402,
+        credential: {
+          ...body.clear402.credential,
+          report: {
+            ...body.clear402.credential.report,
+            provenance: "LOCAL_FORK" as const,
+          },
+        },
+      },
+    };
+    expect(
+      Clear402EnabledPreflightSuccessResponseSchema.safeParse(mixedProvenance)
+        .success,
+    ).toBe(false);
+  });
+
+  it("surfaces generation failure without rewriting the original Decision", async () => {
+    const logger = { error: vi.fn() } satisfies PreflightHandlerLogger;
+    const failingCredentialService: CredentialService = {
+      generate: () => {
+        throw new Error("integration credential sentinel");
+      },
+    };
+    const response = await handlerFor(
+      fixtureService,
+      logger,
+      failingCredentialService,
+    )(requestFrom("amount-mismatch.json"));
+    const text = await response.text();
+    const body = Clear402EnabledPreflightSuccessResponseSchema.parse(
+      JSON.parse(text),
+    );
+
+    expect(response.status).toBe(200);
+    expect(body.report.decision.status).toBe("STOP");
+    expect(body.presentation.decision.status).toBe("STOP");
+    expect(body.clear402).toMatchObject({
+      status: "ERROR",
+      error: { code: "CREDENTIAL_GENERATION_FAILED" },
+    });
+    expect(text).not.toContain("integration credential sentinel");
+  });
+});

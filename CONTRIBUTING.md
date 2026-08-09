@@ -1,4 +1,4 @@
-# Contributing to Moss-Mini Demo
+# Contributing to AnteSig
 
 ## Before starting
 

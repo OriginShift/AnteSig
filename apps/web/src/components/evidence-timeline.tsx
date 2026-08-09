@@ -1,6 +1,7 @@
 import type { Provenance, Simulation } from "@moss-mini-demo/report-schema";
 import {
   evidenceTimelineModel,
+  provenanceBoundRawArtifact,
   type TimelineArtifact,
 } from "../client/evidence-model";
 import { RawEvidenceDrawer } from "./raw-evidence-drawer";
@@ -302,8 +303,13 @@ export function EvidenceTimeline({
       )}
 
       <RawEvidenceDrawer
-        artifact={simulation}
-        filename="simulation-evidence.json"
+        artifact={provenanceBoundRawArtifact(
+          provenance,
+          "simulation",
+          simulation,
+        )}
+        filename={`antesig-${provenance.toLowerCase()}-simulation-evidence.json`}
+        provenance={provenance}
         title="Simulation evidence"
         triggerId={RAW_TRIGGER_ID}
       />

@@ -1,21 +1,25 @@
-# Moss-Mini Demo
+# AnteSig
 
-Moss-Mini Demo is a planned preflight evidence console for people who need to
+AnteSig is a preflight evidence console for people who need to
 inspect an AI agent's intended Monad operation before any wallet review. The
-target product will organize user intent, protocol quotes, a Moss Capability
+product organizes user intent, protocol quotes, a Moss Capability
 Tree, simulation evidence, intent alignment, and a bounded decision into a
 report that a person can inspect.
 
-Moss is an underlying dependency and evidence-producing capability. It is not
-the name of this repository or the application itself.
+Moss is an underlying dependency and evidence-producing capability. AnteSig is
+the product name; the existing repository and package scope remain stable for
+technical compatibility.
 
 ## Current status
 
-This checkout contains the **M0 - Repository & Architecture Baseline** and the
-M1 engineering and evidence-contract foundation. The foundation provides a
-pnpm workspace with a registered `packages/*` boundary, Node 22 and pnpm 11
-project constraints, strict no-emit TypeScript validation, Biome formatting
-and linting, Vitest, and the `quality-gate` GitHub Actions workflow.
+This checkout contains the merged M0-M5 implementation through the M5-06
+performance gate. The project is maintained in the public
+[OriginShift/AnteSig repository](https://github.com/OriginShift/AnteSig), and
+the current public demo is [antesig.vercel.app](https://antesig.vercel.app).
+The engineering foundation provides a pnpm workspace with a registered
+`packages/*` boundary, Node 22 and pnpm 11 project constraints, strict no-emit
+TypeScript validation, Biome formatting and linting, Vitest, and the stable
+`quality-gate` GitHub Actions workflow.
 
 The public `@moss-mini-demo/report-schema` package provides the
 `PreflightReport` v0.1 runtime Schema and strict `DecisionInput` boundary. The
@@ -38,20 +42,26 @@ approval, authorization, execution guarantee, or permission to sign. `STOP`
 is a structured fail-closed result, not proof of safety, transaction
 authorization, or real-chain observation.
 
-The repository now includes a production-buildable and production-startable
-Next.js Web/API baseline. It provides a static placeholder, strict and
-versioned preflight request/response contracts, a bounded server-generated
-run identifier, a fixed health contract, and an offline Fake service for the
-three allowlisted synthetic Fixtures. A valid `LIVE` request returns
-`LIVE_UNAVAILABLE`; it never silently falls back to Fixture data.
+The Next.js Web/API workbench provides Live and Fixture modes, strict and
+versioned preflight contracts, server-generated run identifiers, explicit
+provenance, a three-way request/prepared/simulation comparison, raw evidence
+drawers, Alignment and STOP presentation, and explicit Live-to-Fixture
+recovery. The hosted deployment currently has no configured Live session, so a
+valid `LIVE` request returns `LIVE_UNAVAILABLE`; it never silently falls back
+to Fixture data. The UI exposes the Happy path and Amount mismatch Fixtures;
+the API and regression matrix additionally cover token-out mismatch, synthetic
+RPC failure, warning, network failure, and timeout cases.
 
-This baseline is not an integrated runnable demo or product workflow. It has
-no report orchestration, intent-alignment evaluator, real Moss execution,
-Monad or RPC connectivity, protocol calls, wallet, signing, transaction
-broadcast, or chain integration. It contains no real address, private key,
-API key, Quote, Receipt, simulation, or other real-chain evidence. The Fake
-service and health response are engineering boundaries, not a real backend or
-evidence source.
+Clear402 is an optional layer. When enabled, it appends an unsigned
+report-integrity credential after a valid report and supports offline export,
+verification, and tamper detection. It does not create evidence or alter a
+Decision. It is disabled on the current public demo.
+
+The hosted Web/API path is not a live-chain backend: it has no configured RPC
+network or wallet execution. The standalone [Monad live-smoke procedure](docs/live-smoke.md)
+is the only path that can establish a sanitized `LIVE_SOURCE` observation from
+the pinned Moss build, and it never signs, broadcasts, or authorizes a
+transaction. Fixtures and CI prove deterministic application behavior only.
 
 Do not interpret repository setup, local tooling, CI, or documentation as
 evidence that the target system works, as real-chain evidence, or as a safety
@@ -128,6 +138,12 @@ or strengthen evidence semantics.
 - [Security boundary](docs/security-boundary.md)
 - [STOP presentation requirements](docs/stop-presentation.md)
 - [Real versus mock](docs/real-vs-mock.md)
+- [Evidence claims and source map](docs/evidence-claims.md)
+- [Known issues and operational limits](docs/known-issues.md)
+- [Five-minute demo draft](docs/demo-script.md)
+- [Reliability QA report](docs/reliability-report.md)
+- [Performance acceptance report](docs/performance-report.md)
+- [Production release runbook](docs/release-runbook.md)
 - [M1 completion evidence and criteria](docs/m1-completion-evidence.md)
 - [Governance](docs/governance.md)
 - [Architecture decision records](docs/adr/README.md)
@@ -143,4 +159,4 @@ pull request.
 
 ## License
 
-Moss-Mini Demo is licensed under the [MIT License](LICENSE).
+AnteSig is licensed under the [MIT License](LICENSE).

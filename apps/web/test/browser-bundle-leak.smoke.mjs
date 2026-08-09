@@ -11,7 +11,6 @@ const forbiddenMarkers = [
   "vendor/moss",
   "MossBuildInfo",
   "INTEGRATION_FORK",
-  "clear402",
   "MONAD_RPC",
   "RPC_URL",
   "PRIVATE_KEY",

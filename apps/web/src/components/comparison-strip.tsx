@@ -20,8 +20,8 @@ function formattedAmount(value: string): string {
   if (!/^\d+$/.test(value)) return value;
   const padded = value.padStart(19, "0");
   const whole = padded.slice(0, -18);
-  const fraction = padded.slice(-18, -16);
-  return `${BigInt(whole)}.${fraction}`;
+  const fraction = padded.slice(-18).replace(/0+$/, "");
+  return `${BigInt(whole)}.${fraction || "0"}`;
 }
 
 function columnTitle(key: "intent" | "prepared" | "simulation"): string {
@@ -89,9 +89,14 @@ export function ComparisonStrip({
                     ? "not present"
                     : formattedAmount(amount.value)}
                 </strong>
-                <em className="comparison-primary-unit">NATIVE</em>
                 {amount === undefined ? null : (
-                  <SourceReferences references={amount.sourceReferences} />
+                  <>
+                    <em className="comparison-primary-unit">NATIVE</em>
+                    <small className="comparison-primary-raw">
+                      {amount.value} base units
+                    </small>
+                    <SourceReferences references={amount.sourceReferences} />
+                  </>
                 )}
               </div>
 

@@ -70,7 +70,7 @@ function assertBuildInfo(value) {
     value.sourceMode !== "INTEGRATION_FORK" ||
     value.upstreamRepository !== "https://github.com/nishuzumi/moss" ||
     value.upstreamCommit !== PINNED_MOSS_COMMIT ||
-    value.integrationRepository !== "https://github.com/Moss-Mini-Demo/moss" ||
+    value.integrationRepository !== "https://github.com/OriginShift/moss" ||
     value.integrationCommit !== PINNED_MOSS_COMMIT ||
     value.patchsetDigest !== PATCHSET_DIGEST ||
     value.officialRelease !== false ||

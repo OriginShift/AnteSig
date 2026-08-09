@@ -1,7 +1,12 @@
-import type { Capability, Limitation } from "@moss-mini-demo/report-schema";
+import type {
+  Capability,
+  Limitation,
+  Provenance,
+} from "@moss-mini-demo/report-schema";
 import {
   type CapabilityNodeModel,
   capabilityInspectorModel,
+  provenanceBoundRawArtifact,
 } from "../client/evidence-model";
 import { RawEvidenceDrawer } from "./raw-evidence-drawer";
 
@@ -81,11 +86,13 @@ function CapabilityNode({ node }: Readonly<{ node: CapabilityNodeModel }>) {
 type CapabilityInspectorProps = Readonly<{
   capability: Capability;
   limitations: readonly Limitation[];
+  provenance: Provenance;
 }>;
 
 export function CapabilityInspector({
   capability,
   limitations,
+  provenance,
 }: CapabilityInspectorProps) {
   const model = capabilityInspectorModel(capability, limitations);
 
@@ -187,8 +194,13 @@ export function CapabilityInspector({
       </div>
 
       <RawEvidenceDrawer
-        artifact={capability}
-        filename="capability-evidence.json"
+        artifact={provenanceBoundRawArtifact(
+          provenance,
+          "capability",
+          capability,
+        )}
+        filename={`antesig-${provenance.toLowerCase()}-capability-evidence.json`}
+        provenance={provenance}
         title="Capability evidence"
         triggerId={RAW_TRIGGER_ID}
       />

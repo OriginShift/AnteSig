@@ -11,10 +11,10 @@ const expectedHealth = {
   contractVersion: "0.1",
   status: "ok",
   app: {
-    name: "moss-mini-demo",
+    name: "antesig",
     version: "0.0.0",
     runtime: "nodejs",
-    nodeVersion: "22.23.1",
+    nodeVersion: process.versions.node,
   },
   moss: {
     sourceMode: "INTEGRATION_FORK",
@@ -29,7 +29,7 @@ const expectedHealth = {
     },
   },
   network: { configured: false, id: null },
-  clear402: { enabled: false },
+  clear402: { enabled: process.env.CLEAR402_ENABLED === "true" },
 };
 
 function delay(milliseconds) {
@@ -91,6 +91,8 @@ const child = spawn(command, ["start"], {
     ...process.env,
     HOSTNAME: "127.0.0.1",
     NEXT_TELEMETRY_DISABLED: "1",
+    CLEAR402_ENABLED:
+      process.env.CLEAR402_ENABLED === "true" ? "true" : "false",
     PORT: String(port),
   },
   stdio: ["ignore", "pipe", "pipe"],
@@ -131,6 +133,16 @@ try {
   );
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.deepEqual(await response.json(), expectedHealth);
+
+  const home = await fetch(`http://127.0.0.1:${port}/`);
+  assert.equal(home.status, 200);
+  const document = await home.text();
+  assert.match(document, /<title>AnteSig \| Preflight Workbench<\/title>/);
+
+  const logo = await fetch(`http://127.0.0.1:${port}/brand/antesig-logo.png`);
+  assert.equal(logo.status, 200);
+  assert.match(logo.headers.get("content-type") ?? "", /^image\/png/);
+  assert.ok((await logo.arrayBuffer()).byteLength > 100_000);
 } finally {
   await terminate(child);
 }

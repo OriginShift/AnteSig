@@ -2,8 +2,8 @@
 
 ## Status and purpose
 
-This document defines the M0 architecture boundary for the target Moss-Mini
-Demo. It is not an implementation design, business schema, or claim that any
+This document defines the M0 architecture boundary for AnteSig. It is not an
+implementation design, business schema, or claim that any
 module currently exists.
 
 ## Planned data flow

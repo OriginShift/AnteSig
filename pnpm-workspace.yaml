@@ -1,5 +1,7 @@
 packages:
   - "packages/*"
   - "apps/*"
+overrides:
+  'nanoid@': 3.3.17
 allowBuilds:
-  'sharp@0.34.5': true
+  'sharp@0.35.3': true

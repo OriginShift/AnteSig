@@ -104,14 +104,14 @@ body {
   color: var(--ledger-sheet);
   font-size: 1rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .brand-surface {
   color: rgb(255 254 250 / 62%);
   font-family: var(--mono-font);
   font-size: 0.66rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -128,7 +128,7 @@ body {
   border-radius: 0;
   font-family: var(--mono-font);
   font-size: 0.65rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   padding: 6px 8px;
 }
 
@@ -140,7 +140,7 @@ body {
   white-space: nowrap;
 }
 
-.forensic-hero {
+.forensic-intro {
   align-items: end;
   background-color: var(--ledger-dark);
   background-image: url("/visuals/forensic-desk-desktop.webp");
@@ -150,13 +150,13 @@ body {
   color: var(--ledger-sheet);
   display: grid;
   isolation: isolate;
-  min-height: 100svh;
+  min-height: 560px;
   overflow: hidden;
   padding: 124px clamp(28px, 5.5vw, 108px) clamp(52px, 6vw, 92px);
   position: relative;
 }
 
-.forensic-hero::before {
+.forensic-intro::before {
   background:
     linear-gradient(180deg, rgb(9 11 16 / 34%) 0%, transparent 28%),
     linear-gradient(
@@ -172,7 +172,7 @@ body {
   z-index: -1;
 }
 
-.forensic-hero::after {
+.forensic-intro::after {
   background-image:
     radial-gradient(
       circle at center,
@@ -197,7 +197,7 @@ body {
   z-index: -1;
 }
 
-.hero-technical-frame {
+.intro-technical-frame {
   border: 1px solid rgb(66 198 167 / 55%);
   clip-path: var(--cut-lg);
   inset: 100px 30px 30px;
@@ -205,8 +205,8 @@ body {
   position: absolute;
 }
 
-.hero-technical-frame::before,
-.hero-technical-frame::after {
+.intro-technical-frame::before,
+.intro-technical-frame::after {
   background: var(--ledger-mint);
   content: "";
   height: 2px;
@@ -215,23 +215,23 @@ body {
   width: 86px;
 }
 
-.hero-technical-frame::before {
+.intro-technical-frame::before {
   left: 28%;
 }
 
-.hero-technical-frame::after {
+.intro-technical-frame::after {
   right: 10%;
 }
 
-.hero-provenance {
+.intro-provenance {
   align-items: center;
   color: var(--ledger-mint);
   display: flex;
   font-family: var(--mono-font);
-  font-size: clamp(0.7rem, 0.9vw, 0.95rem);
+  font-size: 0.82rem;
   gap: 10px;
   left: 50%;
-  letter-spacing: 0.09em;
+  letter-spacing: 0;
   position: absolute;
   text-transform: uppercase;
   top: 22%;
@@ -239,56 +239,57 @@ body {
   white-space: nowrap;
 }
 
-.hero-provenance strong {
+.intro-provenance strong {
   color: var(--ledger-sheet);
   font-weight: 600;
 }
 
-.hero-provenance-mark {
+.intro-provenance-mark {
   color: var(--ledger-teal);
   font-weight: 900;
 }
 
-.hero-copy {
+.intro-copy {
   max-width: none;
+  min-width: 0;
   position: relative;
   width: 100%;
   z-index: 2;
 }
 
-.hero-chapter,
+.intro-chapter,
 .workbench-kicker,
 .chapter-title {
   color: var(--ledger-mint);
   display: block;
   font-family: var(--mono-font);
   font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0;
   margin-bottom: 18px;
   text-transform: uppercase;
 }
 
-.hero-copy h1 {
+.intro-copy h1 {
   font-family: var(--display-font);
-  font-size: clamp(4rem, 6.8vw, 9rem);
+  font-size: 7rem;
   font-stretch: condensed;
   font-weight: 800;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
   line-height: 0.78;
   margin: 0;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-.hero-copy p {
+.intro-copy p {
   font-family: var(--mono-font);
-  font-size: clamp(0.85rem, 1.25vw, 1.2rem);
-  letter-spacing: 0.025em;
+  font-size: 1rem;
+  letter-spacing: 0;
   line-height: 1.5;
   margin: 28px 0 34px;
 }
 
-.hero-cta {
+.intro-cta {
   align-items: center;
   background: rgb(9 11 16 / 78%);
   border: 1px solid var(--ledger-mint);
@@ -299,7 +300,7 @@ body {
   font-size: 0.86rem;
   gap: 34px;
   justify-content: space-between;
-  letter-spacing: 0.1em;
+  letter-spacing: 0;
   min-width: 250px;
   padding: 17px 20px;
   text-decoration: none;
@@ -309,7 +310,7 @@ body {
     color 160ms ease;
 }
 
-.hero-cta svg {
+.intro-cta svg {
   fill: none;
   stroke: currentColor;
   stroke-linecap: square;
@@ -318,16 +319,16 @@ body {
   transition: transform 160ms ease;
 }
 
-.hero-cta:hover {
+.intro-cta:hover {
   background: var(--ledger-mint);
   color: var(--ledger-dark);
 }
 
-.hero-cta:hover svg {
+.intro-cta:hover svg {
   transform: translateX(4px);
 }
 
-.hero-evidence-spine {
+.intro-evidence-spine {
   bottom: 52px;
   display: grid;
   grid-template-columns: repeat(4, minmax(84px, 1fr));
@@ -340,7 +341,7 @@ body {
   z-index: 2;
 }
 
-.hero-evidence-spine::before {
+.intro-evidence-spine::before {
   background: var(--ledger-mint);
   content: "";
   height: 1px;
@@ -350,7 +351,7 @@ body {
   top: 12px;
 }
 
-.hero-evidence-spine li {
+.intro-evidence-spine li {
   align-items: center;
   display: grid;
   gap: 8px;
@@ -358,7 +359,7 @@ body {
   position: relative;
 }
 
-.hero-evidence-spine li > span {
+.intro-evidence-spine li > span {
   align-items: center;
   background: var(--ledger-moss);
   border: 1px solid var(--ledger-mint);
@@ -373,12 +374,12 @@ body {
   z-index: 1;
 }
 
-.hero-evidence-spine strong {
+.intro-evidence-spine strong {
   color: rgb(255 254 250 / 72%);
   font-family: var(--mono-font);
   font-size: 0.6rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -400,9 +401,9 @@ body {
 
 .workbench-heading h2 {
   font-family: var(--display-font);
-  font-size: clamp(2.6rem, 5vw, 5.8rem);
+  font-size: 4.5rem;
   font-stretch: condensed;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   line-height: 0.9;
   margin: 0 0 14px;
   text-transform: uppercase;
@@ -412,7 +413,7 @@ body {
   color: rgb(24 35 31 / 68%);
   font-family: var(--mono-font);
   font-size: 0.75rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 .workbench-kicker {
@@ -481,7 +482,7 @@ body {
 .result-header h2 {
   font-family: var(--display-font);
   font-size: 1.5rem;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -501,7 +502,7 @@ body {
   border-radius: 0;
   font-family: var(--mono-font);
   font-size: 0.68rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 
 .mode-control button.active {
@@ -552,7 +553,7 @@ dt {
   color: rgb(24 35 31 / 58%);
   font-family: var(--mono-font);
   font-size: 0.62rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
 }
 
 .field-control input {
@@ -577,7 +578,7 @@ dt {
   clip-path: var(--cut-sm);
   font-family: var(--mono-font);
   font-size: 0.7rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   min-height: 48px;
   text-transform: uppercase;
 }
@@ -674,7 +675,7 @@ dt {
 .empty-state-index {
   color: rgb(12 117 101 / 14%);
   font-family: var(--display-font);
-  font-size: clamp(5rem, 11vw, 10rem);
+  font-size: 8rem;
   font-weight: 800;
   line-height: 0.8;
   position: absolute;
@@ -686,8 +687,8 @@ dt {
 .loading-state h3,
 .error-state h3 {
   font-family: var(--display-font);
-  font-size: clamp(2.8rem, 5vw, 5.4rem);
-  letter-spacing: -0.03em;
+  font-size: 4rem;
+  letter-spacing: 0;
   line-height: 0.9;
   text-transform: uppercase;
 }
@@ -830,8 +831,8 @@ dt {
 .decision-copy > strong {
   display: block;
   font-family: var(--display-font);
-  font-size: clamp(4.5rem, 9vw, 9.5rem);
-  letter-spacing: -0.04em;
+  font-size: 7rem;
+  letter-spacing: 0;
   line-height: 0.72;
   margin-bottom: 28px;
   text-transform: uppercase;
@@ -850,7 +851,7 @@ dt {
   display: inline-flex;
   font-family: var(--mono-font);
   font-size: 0.64rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   margin-top: 8px;
   padding: 7px 9px;
   text-transform: uppercase;
@@ -868,7 +869,7 @@ dt {
   cursor: pointer;
   font-family: var(--mono-font);
   font-size: 0.64rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   list-style: none;
   text-transform: uppercase;
 }
@@ -908,7 +909,7 @@ dt {
 .decision-value {
   font-family: var(--mono-font);
   font-size: 0.7rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   position: relative;
   text-transform: uppercase;
   z-index: 1;
@@ -926,6 +927,7 @@ dt {
 
 .tension-success-panel,
 .tension-fail-panel {
+  min-width: 0;
   padding: clamp(34px, 5vw, 74px);
   position: relative;
 }
@@ -956,8 +958,8 @@ dt {
 
 .tension-success-panel h3 {
   font-family: var(--display-font);
-  font-size: clamp(3rem, 5vw, 5.2rem);
-  letter-spacing: -0.025em;
+  font-size: 4rem;
+  letter-spacing: 0;
   line-height: 0.92;
   margin: 0 0 38px;
   text-transform: uppercase;
@@ -993,7 +995,7 @@ dt {
 
 .tension-amounts strong {
   font-family: var(--mono-font);
-  font-size: clamp(0.82rem, 1.4vw, 1.15rem);
+  font-size: 1rem;
 }
 
 .tension-amounts small {
@@ -1007,7 +1009,7 @@ dt {
   border: 1px solid rgb(255 254 250 / 45%);
   clip-path: var(--cut-sm);
   font-family: var(--display-font);
-  font-size: clamp(1.6rem, 3vw, 3.2rem);
+  font-size: 2.4rem;
   line-height: 1;
   margin: 40px 0 0;
   padding: 18px;
@@ -1020,7 +1022,7 @@ dt {
   font-family: var(--mono-font);
   font-size: 0.58rem;
   left: clamp(34px, 5vw, 74px);
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   position: absolute;
 }
 
@@ -1037,8 +1039,8 @@ dt {
 .tension-fail-heading {
   border-bottom: 1px solid currentColor;
   font-family: var(--display-font);
-  font-size: clamp(2.4rem, 4.2vw, 4.8rem);
-  letter-spacing: -0.02em;
+  font-size: 3.5rem;
+  letter-spacing: 0;
   padding-bottom: 18px;
   text-align: center;
   text-transform: uppercase;
@@ -1048,8 +1050,8 @@ dt {
 .tension-ratio {
   color: rgb(199 66 58 / 25%);
   font-family: var(--display-font);
-  font-size: clamp(10rem, 20vw, 20rem);
-  letter-spacing: -0.08em;
+  font-size: 14rem;
+  letter-spacing: 0;
   line-height: 0.78;
   margin-left: -0.08em;
 }
@@ -1058,7 +1060,7 @@ dt {
   border: 1px solid var(--ledger-red);
   font-family: var(--mono-font);
   font-size: 0.65rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   padding: 8px 10px;
   text-transform: uppercase;
 }
@@ -1073,16 +1075,16 @@ dt {
 .section-index {
   color: var(--ledger-teal);
   font-family: var(--display-font);
-  font-size: clamp(2.5rem, 4vw, 4.5rem);
+  font-size: 3.5rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   line-height: 0.8;
 }
 
 .section-heading h3 {
   font-family: var(--display-font);
-  font-size: clamp(2rem, 3.4vw, 4rem);
-  letter-spacing: -0.025em;
+  font-size: 3rem;
+  letter-spacing: 0;
   line-height: 0.9;
   margin: 0 0 10px;
   text-transform: uppercase;
@@ -1201,7 +1203,7 @@ dt {
 .comparison-column h4 {
   font-family: var(--mono-font);
   font-size: 0.78rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -1224,7 +1226,7 @@ dt {
 .comparison-primary-unit {
   font-family: var(--mono-font);
   font-style: normal;
-  letter-spacing: 0.12em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -1236,10 +1238,12 @@ dt {
 .comparison-primary-value > strong {
   color: var(--ledger-moss);
   font-family: var(--display-font);
-  font-size: clamp(4.5rem, 7.4vw, 9.5rem);
-  letter-spacing: -0.06em;
+  font-size: 6rem;
+  letter-spacing: 0;
   line-height: 0.9;
   margin: 18px 0 12px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .comparison-column.prepared .comparison-primary-value > strong,
@@ -1248,8 +1252,17 @@ dt {
 }
 
 .comparison-primary-unit {
-  font-size: clamp(1rem, 1.5vw, 1.45rem);
+  font-size: 1.2rem;
   font-weight: 800;
+}
+
+.comparison-primary-raw {
+  color: rgb(24 35 31 / 64%);
+  font-family: var(--mono-font);
+  font-size: 0.58rem;
+  margin-top: 8px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .comparison-primary-value .comparison-sources {
@@ -1265,7 +1278,7 @@ dt {
 .comparison-details > summary {
   cursor: pointer;
   font-size: 0.6rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   list-style: none;
   padding: 15px 0 4px;
   text-transform: uppercase;
@@ -1290,7 +1303,7 @@ dt {
   font-family: var(--mono-font);
   font-size: 0.67rem;
   justify-content: space-between;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   margin-top: 40px;
   text-transform: uppercase;
 }
@@ -1405,6 +1418,17 @@ dt {
 .result-facts dd {
   font-family: var(--mono-font);
   font-size: 0.66rem;
+}
+
+.credential-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.credential-kind {
+  justify-self: end;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .report-intent,
@@ -1591,7 +1615,7 @@ dt {
 
 .capability-inspector .capability-summary-heading span {
   font-size: 0.76rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
 }
 
 .capability-summary-heading strong {
@@ -1650,7 +1674,7 @@ dt {
 .capability-inspector .capability-preserved-artifact > span {
   color: var(--ledger-mint);
   font-size: 0.66rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -1738,9 +1762,9 @@ dt {
 .simulation-stage-rail li > span {
   color: rgb(225 209 179 / 42%);
   font-family: var(--display-font);
-  font-size: clamp(2.5rem, 4.4vw, 5rem);
+  font-size: 3.75rem;
   font-weight: 800;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   line-height: 0.85;
 }
 
@@ -1845,7 +1869,7 @@ dt {
   border: 4px solid var(--ledger-teal);
   color: var(--ledger-teal);
   font-family: var(--display-font);
-  font-size: clamp(2.2rem, 4vw, 4.6rem);
+  font-size: 3.4rem;
   line-height: 0.92;
   margin: 24px 0 16px;
   padding: 18px 22px;
@@ -1872,7 +1896,7 @@ dt {
 .simulation-boundary-note strong {
   color: var(--ledger-red);
   font-family: var(--display-font);
-  font-size: clamp(1.8rem, 3.2vw, 3.8rem);
+  font-size: 2.8rem;
   line-height: 0.9;
   text-transform: uppercase;
 }
@@ -1896,7 +1920,7 @@ dt {
   font-family: var(--mono-font);
   font-size: 0.67rem;
   justify-content: space-between;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   list-style: none;
   padding: 16px 0;
   text-transform: uppercase;
@@ -1917,7 +1941,7 @@ dt {
 .record-status {
   border-radius: 0;
   font-family: var(--mono-font);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
 }
 
 .verification-statuses {
@@ -2075,10 +2099,10 @@ dt {
   color: var(--ledger-red);
   content: "STOP";
   font-family: var(--display-font);
-  font-size: clamp(5.2rem, 11vw, 12rem);
+  font-size: 8rem;
   font-weight: 800;
   left: 50%;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 1;
   opacity: 0.1;
   padding: 20px 54px;
@@ -2113,7 +2137,7 @@ dt {
 .stop-details .stop-boundary-strip strong {
   font-family: var(--mono-font);
   font-size: 0.68rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -2210,8 +2234,14 @@ dt {
   color: var(--ledger-sheet);
 }
 
+@media (max-width: 1400px) {
+  .intro-copy h1 {
+    font-size: 6rem;
+  }
+}
+
 @media (max-width: 1180px) {
-  .hero-evidence-spine {
+  .intro-evidence-spine {
     display: none;
   }
 
@@ -2228,7 +2258,7 @@ dt {
   }
 
   .core-tension {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .tension-fail-panel {
@@ -2281,8 +2311,8 @@ dt {
     position: absolute;
   }
 
-  .forensic-hero {
-    min-height: 900px;
+  .forensic-intro {
+    min-height: 540px;
   }
 
   .workbench-grid {
@@ -2352,14 +2382,14 @@ dt {
     font-size: 0.55rem;
   }
 
-  .forensic-hero {
+  .forensic-intro {
     background-image: url("/visuals/forensic-desk-mobile.webp");
     background-position: center;
-    min-height: 100svh;
+    min-height: 560px;
     padding: 170px 20px 38px;
   }
 
-  .forensic-hero::before {
+  .forensic-intro::before {
     background:
       linear-gradient(180deg, rgb(9 11 16 / 35%) 0%, transparent 32%),
       linear-gradient(
@@ -2370,33 +2400,33 @@ dt {
       );
   }
 
-  .hero-technical-frame {
+  .intro-technical-frame {
     inset: 152px 10px 10px;
   }
 
-  .hero-provenance {
+  .intro-provenance {
     left: 20px;
     top: 34%;
     transform: none;
   }
 
-  .hero-copy {
+  .intro-copy {
     max-width: 100%;
   }
 
-  .hero-copy h1 {
-    font-size: clamp(3.7rem, 18vw, 5.8rem);
+  .intro-copy h1 {
+    font-size: 4.6rem;
     line-height: 0.82;
     white-space: normal;
   }
 
-  .hero-copy p {
+  .intro-copy p {
     font-size: 0.74rem;
     margin: 20px 0 26px;
     max-width: 34ch;
   }
 
-  .hero-cta {
+  .intro-cta {
     min-width: 220px;
   }
 
@@ -2411,7 +2441,7 @@ dt {
   }
 
   .workbench-heading h2 {
-    font-size: clamp(2.5rem, 13vw, 4rem);
+    font-size: 3.1rem;
   }
 
   .workbench-heading p {
@@ -2481,7 +2511,7 @@ dt {
   }
 
   .decision-copy > strong {
-    font-size: clamp(3.8rem, 21vw, 6rem);
+    font-size: 4.6rem;
     margin-bottom: 20px;
   }
 
@@ -2506,6 +2536,11 @@ dt {
 
   .tension-success-panel {
     min-height: 570px;
+  }
+
+  .tension-success-panel h3 {
+    font-size: 3.1rem;
+    overflow-wrap: anywhere;
   }
 
   .tension-amounts > div {
@@ -2550,7 +2585,7 @@ dt {
   }
 
   .comparison-primary-value > strong {
-    font-size: clamp(4.4rem, 23vw, 6.4rem);
+    font-size: 4.8rem;
   }
 
   .comparison-footer {
@@ -2727,8 +2762,8 @@ dt {
   }
 
   .result-content > *,
-  .hero-cta,
-  .hero-cta svg,
+  .intro-cta,
+  .intro-cta svg,
   .comparison-column {
     animation: none;
     transition: none;

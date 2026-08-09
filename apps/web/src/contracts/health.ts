@@ -4,10 +4,10 @@ export const HealthResponseSchema = z.strictObject({
   contractVersion: z.literal("0.1"),
   status: z.literal("ok"),
   app: z.strictObject({
-    name: z.literal("moss-mini-demo"),
+    name: z.literal("antesig"),
     version: z.literal("0.0.0"),
     runtime: z.literal("nodejs"),
-    nodeVersion: z.literal("22.23.1"),
+    nodeVersion: z.string().regex(/^22\.\d+\.\d+$/),
   }),
   moss: z.strictObject({
     sourceMode: z.literal("INTEGRATION_FORK"),
@@ -26,7 +26,7 @@ export const HealthResponseSchema = z.strictObject({
     id: z.null(),
   }),
   clear402: z.strictObject({
-    enabled: z.literal(false),
+    enabled: z.boolean(),
   }),
 });
 

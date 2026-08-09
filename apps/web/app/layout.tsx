@@ -6,8 +6,10 @@ export const metadata: Metadata = {
   title: "AnteSig | Preflight Workbench",
   description:
     "Inspect intent, prepared capability, simulation evidence, and bounded decisions before signer review.",
+  applicationName: "AnteSig",
   icons: {
     icon: "/brand/antesig-logo.png",
+    apple: "/brand/antesig-logo.png",
   },
 };
 

@@ -264,10 +264,10 @@ describe("health contract", () => {
       contractVersion: "0.1",
       status: "ok",
       app: {
-        name: "moss-mini-demo",
+        name: "antesig",
         version: "0.0.0",
         runtime: "nodejs",
-        nodeVersion: "22.23.1",
+        nodeVersion: process.versions.node,
       },
       moss: {
         sourceMode: "INTEGRATION_FORK",
@@ -296,6 +296,12 @@ describe("health contract", () => {
     ]);
     expect(
       HealthResponseSchema.safeParse({ ...health, timestamp: "now" }).success,
+    ).toBe(false);
+    expect(
+      HealthResponseSchema.safeParse({
+        ...health,
+        app: { ...health.app, nodeVersion: "24.0.0" },
+      }).success,
     ).toBe(false);
   });
 });

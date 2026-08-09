@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   capabilityInspectorModel,
   flattenCapabilityNodes,
+  provenanceBoundRawArtifact,
   serializeRawArtifact,
 } from "../src/client/evidence-model";
 
@@ -146,6 +147,21 @@ describe("Capability inspector model", () => {
     expect(JSON.parse(serialized)).toEqual(CAPABILITY);
     expect(serialized).toContain("unknownFutureField");
     expect(serialized).toContain("unknownEnvelopeField");
+  });
+
+  it("binds raw evidence to the displayed provenance without changing source paths", () => {
+    const artifact = provenanceBoundRawArtifact(
+      "FIXTURE",
+      "capability",
+      CAPABILITY,
+    );
+
+    expect(artifact).toEqual({ provenance: "FIXTURE", capability: CAPABILITY });
+    expect(JSON.parse(serializeRawArtifact(artifact))).toMatchObject({
+      provenance: "FIXTURE",
+      capability: { raw: { unknownEnvelopeField: { retained: "yes" } } },
+    });
+    expect(CAPABILITY).not.toHaveProperty("provenance");
   });
 
   it("represents unavailable Capability without inventing hierarchy", () => {
