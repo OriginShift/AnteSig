@@ -12,8 +12,8 @@ technical compatibility.
 
 ## Current status
 
-This checkout contains the merged M0-M5 implementation through the M5-03
-reliability matrix. The project is maintained in the public
+This checkout contains the merged M0-M5 implementation through the M5-06
+performance gate. The project is maintained in the public
 [OriginShift/AnteSig repository](https://github.com/OriginShift/AnteSig), and
 the current public demo is [antesig.vercel.app](https://antesig.vercel.app).
 The engineering foundation provides a pnpm workspace with a registered
@@ -142,6 +142,8 @@ or strengthen evidence semantics.
 - [Known issues and operational limits](docs/known-issues.md)
 - [Five-minute demo draft](docs/demo-script.md)
 - [Reliability QA report](docs/reliability-report.md)
+- [Performance acceptance report](docs/performance-report.md)
+- [Production release runbook](docs/release-runbook.md)
 - [M1 completion evidence and criteria](docs/m1-completion-evidence.md)
 - [Governance](docs/governance.md)
 - [Architecture decision records](docs/adr/README.md)
