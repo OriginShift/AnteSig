@@ -51,9 +51,9 @@ async function assertNoHorizontalOverflow(page) {
 async function assertJudgeComprehension(page, decision) {
   const headings = page.locator(".comparison-column h4");
   await expect(headings).toHaveText([
-    "User request",
+    "User intent",
     "Agent prepared",
-    "Simulation occurred",
+    "Simulation observed",
   ]);
   await expect(page.locator(".decision-banner")).toContainText(decision);
   if (decision === "MANUAL_REVIEW") {
@@ -63,6 +63,12 @@ async function assertJudgeComprehension(page, decision) {
   } else {
     await expect(page.locator(".stop-details")).toContainText(
       "CRITICAL_ALIGNMENT_FAIL",
+    );
+    await expect(page.locator(".comparison-primary-value > strong")).toHaveText(
+      ["1.00", "10.00", "10.00"],
+    );
+    await expect(page.locator(".simulation-boundary-note")).toContainText(
+      "Success is not permission to sign",
     );
   }
 }

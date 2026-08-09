@@ -115,6 +115,32 @@ describe("Capability inspector model", () => {
     expect(model.limitations).toEqual([LIMITATION]);
   });
 
+  it("surfaces source-bound scalar raw fields without inventing hierarchy", () => {
+    const capability = CapabilitySchema.parse({
+      availability: "AVAILABLE",
+      raw: {
+        origin: "synthetic-development-fixture",
+        amountIn: "10000000000000000000",
+        nested: { retained: true },
+      },
+    });
+
+    const model = capabilityInspectorModel(capability, []);
+    expect(model.root).toBeUndefined();
+    expect(model.rawHighlights).toEqual([
+      {
+        label: "amountIn",
+        value: "10000000000000000000",
+        sourceReference: "/capability/raw/amountIn",
+      },
+      {
+        label: "origin",
+        value: "synthetic-development-fixture",
+        sourceReference: "/capability/raw/origin",
+      },
+    ]);
+  });
+
   it("serializes the untouched raw object including unknown fields", () => {
     const serialized = serializeRawArtifact(CAPABILITY);
     expect(JSON.parse(serialized)).toEqual(CAPABILITY);

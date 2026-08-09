@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { PreflightClientError, requestPreflight } from "../client/api-client";
 import {
@@ -22,6 +23,7 @@ import type { PreflightRequest } from "../contracts/preflight";
 import { AlignmentList } from "./alignment-list";
 import { CapabilityInspector } from "./capability-inspector";
 import { ComparisonStrip } from "./comparison-strip";
+import { CoreTension } from "./core-tension";
 import { DecisionBanner } from "./decision-banner";
 import { EvidenceTimeline } from "./evidence-timeline";
 import { IntentForm } from "./intent-form";
@@ -63,11 +65,15 @@ export function WorkbenchShell() {
   >(undefined);
   const nextToken = useRef(0);
   const controlPane = useRef<HTMLElement>(null);
-  const resultRegion = useRef<HTMLElement>(null);
+  const resultRegion = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (state.status === "RESULT" || state.status === "ERROR") {
-      resultRegion.current?.focus();
+      const target = resultRegion.current;
+      requestAnimationFrame(() => {
+        target?.focus({ preventScroll: true });
+        target?.scrollIntoView({ block: "start" });
+      });
     }
   }, [state.status]);
 
@@ -180,24 +186,93 @@ export function WorkbenchShell() {
   const report = state.status === "RESULT" ? state.response.report : undefined;
 
   return (
-    <div className="workbench-shell">
+    <div className={`workbench-shell status-${state.status.toLowerCase()}`}>
       <header className="app-bar">
-        <div className="brand-lockup">
-          <span className="brand-name">Moss-Mini Demo</span>
-          <span className="brand-surface">Preflight workbench</span>
-        </div>
+        <a className="brand-lockup" href="#page-top" aria-label="AnteSig home">
+          <Image
+            alt="AnteSig logo"
+            className="brand-logo"
+            height={1168}
+            priority
+            sizes="58px"
+            src="/brand/antesig-logo.png"
+            width={1188}
+          />
+          <span className="brand-copy">
+            <span className="brand-name">AnteSig</span>
+            <span className="brand-surface">Preflight workbench</span>
+          </span>
+        </a>
         <ul aria-label="Environment" className="environment-list">
-          <li className="environment-item">
+          <li
+            className="environment-item"
+            title={`Network: ${report?.network ?? "awaiting run"}`}
+          >
             Network: {report?.network ?? "awaiting run"}
           </li>
-          <li className="environment-item">Optional profile: disabled</li>
+          <li className="environment-item" title="Optional profile: disabled">
+            Optional profile: disabled
+          </li>
         </ul>
       </header>
 
-      <main className="workbench-main">
+      <section
+        className="forensic-hero"
+        id="page-top"
+        aria-labelledby="hero-heading"
+      >
+        <div className="hero-technical-frame" aria-hidden="true" />
+        <div className="hero-provenance">
+          <span className="hero-provenance-mark" aria-hidden="true">
+            •—•
+          </span>
+          <span>Provenance</span>
+          <strong>
+            {mode === "FIXTURE"
+              ? fixtureScenario
+                ? "FIXTURE"
+                : "FIXTURE NOT LOADED"
+              : "LIVE INPUT"}
+          </strong>
+        </div>
+
+        <div className="hero-copy">
+          <span className="hero-chapter">01 · Evidence boundary</span>
+          <h1 id="hero-heading">Evidence before action.</h1>
+          <p>Inspect intent. Preserve evidence. Stop before signer.</p>
+          <a className="hero-cta" href="#preflight-workbench">
+            <span>Run preflight</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24">
+              <path d="M5 12h13M13 6l6 6-6 6" />
+            </svg>
+          </a>
+        </div>
+
+        <ol className="hero-evidence-spine" aria-label="Evidence sequence">
+          <li>
+            <span>01</span>
+            <strong>Intent</strong>
+          </li>
+          <li>
+            <span>02</span>
+            <strong>Capability</strong>
+          </li>
+          <li>
+            <span>03</span>
+            <strong>Simulation</strong>
+          </li>
+          <li>
+            <span>04</span>
+            <strong>Decision</strong>
+          </li>
+        </ol>
+      </section>
+
+      <main className="workbench-main" id="preflight-workbench">
         <div className="workbench-heading">
           <div>
-            <h1>Exact-input Swap preflight</h1>
+            <span className="workbench-kicker">Evidence ledger / v0.1</span>
+            <h2>Exact-input Swap preflight</h2>
             <p>Structured intent, protocol quotes and evidence provenance</p>
           </div>
           <span className={`state-badge ${state.status.toLowerCase()}`}>
@@ -256,7 +331,7 @@ export function WorkbenchShell() {
           </section>
 
           <section className="result-pane" aria-labelledby="result-heading">
-            <div className="result-header">
+            <div className="result-header" ref={resultRegion} tabIndex={-1}>
               <div>
                 <h2 id="result-heading">Run result</h2>
                 <p>{stateDescription(state.status)}</p>
@@ -272,15 +347,22 @@ export function WorkbenchShell() {
               aria-busy={state.status === "RUNNING"}
               aria-live="polite"
               className="result-surface"
-              ref={resultRegion}
-              tabIndex={-1}
             >
               {state.status === "IDLE" ? (
                 <div className="empty-state">
+                  <span className="empty-state-index" aria-hidden="true">
+                    01—06
+                  </span>
                   <h3>No result</h3>
                   <p>
                     Run identifiers and bounded Decision output appear here.
                   </p>
+                  <ol className="empty-evidence-track" aria-hidden="true">
+                    <li>Intent</li>
+                    <li>Prepared</li>
+                    <li>Simulation</li>
+                    <li>Decision</li>
+                  </ol>
                 </div>
               ) : null}
 
@@ -293,15 +375,31 @@ export function WorkbenchShell() {
               ) : null}
 
               {state.status === "RESULT" ? (
-                <div className="result-content">
+                <div
+                  className={`result-content decision-${state.response.presentation.decision.status.toLowerCase()}`}
+                >
                   <DecisionBanner
                     limitations={state.response.report.limitations}
                     presentation={state.response.presentation}
                   />
 
+                  <CoreTension
+                    input={{
+                      capability: state.response.report.capability,
+                      intent: state.response.report.intent,
+                      quotes: state.response.report.quotes,
+                      selection: state.response.report.selection,
+                      simulation: state.response.report.simulation,
+                    }}
+                    show={
+                      state.response.presentation.decision.status === "STOP"
+                    }
+                  />
+
                   <ComparisonStrip
                     capability={state.response.report.capability}
                     intent={state.response.report.intent}
+                    provenance={state.response.report.provenance}
                     quotes={state.response.report.quotes}
                     selection={state.response.report.selection}
                     simulation={state.response.report.simulation}
@@ -310,8 +408,6 @@ export function WorkbenchShell() {
                   <AlignmentList
                     checks={state.response.report.alignment.checks}
                   />
-
-                  <StopDetails presentation={state.response.presentation} />
 
                   <dl className="result-facts">
                     <div>
@@ -400,7 +496,13 @@ export function WorkbenchShell() {
                   />
 
                   <EvidenceTimeline
+                    provenance={state.response.report.provenance}
                     simulation={state.response.report.simulation}
+                  />
+
+                  <StopDetails
+                    presentation={state.response.presentation}
+                    provenance={state.response.report.provenance}
                   />
                 </div>
               ) : null}

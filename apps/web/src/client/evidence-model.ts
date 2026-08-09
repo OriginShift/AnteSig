@@ -50,6 +50,12 @@ export type CapabilityRiskLabel = Readonly<{
   sourceReference: string;
 }>;
 
+export type CapabilityRawHighlight = Readonly<{
+  label: string;
+  value: string;
+  sourceReference: string;
+}>;
+
 export type CapabilityNodeModel = Readonly<{
   kind: "CAPABILITY" | "TRANSACTION" | "UNKNOWN";
   role:
@@ -72,6 +78,7 @@ export type CapabilityInspectorModel = Readonly<{
   availability: Capability["availability"];
   sourceReference: string;
   root?: CapabilityNodeModel;
+  rawHighlights: readonly CapabilityRawHighlight[];
   riskLabels: readonly CapabilityRiskLabel[];
   limitations: readonly Limitation[];
   failureCode?: string;
@@ -162,6 +169,34 @@ function riskLabels(raw: unknown): CapabilityRiskLabel[] {
   );
 }
 
+function jsonPointerSegment(value: string): string {
+  return value.replaceAll("~", "~0").replaceAll("/", "~1");
+}
+
+function rawHighlights(raw: unknown): CapabilityRawHighlight[] {
+  const parsed = record(raw);
+  if (parsed === undefined) return [];
+
+  return Object.entries(parsed)
+    .flatMap(([label, value]) =>
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+        ? [
+            {
+              label,
+              value: String(value),
+              sourceReference: `/capability/raw/${jsonPointerSegment(label)}`,
+            },
+          ]
+        : [],
+    )
+    .sort((left, right) =>
+      left.label === "amountIn" ? -1 : right.label === "amountIn" ? 1 : 0,
+    )
+    .slice(0, 4);
+}
+
 export function capabilityInspectorModel(
   capability: Capability,
   limitations: readonly Limitation[],
@@ -170,6 +205,7 @@ export function capabilityInspectorModel(
     return {
       availability: capability.availability,
       sourceReference: "/capability",
+      rawHighlights: [],
       riskLabels: [],
       limitations,
       failureCode: capability.failure.code,
@@ -199,6 +235,7 @@ export function capabilityInspectorModel(
             { transactionIndex: 0 },
           ),
         }),
+    rawHighlights: rawHighlights(capability.raw),
     riskLabels: riskLabels(capability.raw),
     limitations,
     failureSourceReferences: [],

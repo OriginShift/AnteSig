@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./forensic-ledger.css";
 
 export const metadata: Metadata = {
-  title: "Preflight Workbench | Moss-Mini Demo",
-  description: "Inspect a structured Monad preflight run.",
+  title: "AnteSig | Preflight Workbench",
+  description:
+    "Inspect intent, prepared capability, simulation evidence, and bounded decisions before signer review.",
   icons: {
-    icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    icon: "/brand/antesig-logo.png",
   },
 };
 
