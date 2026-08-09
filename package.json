@@ -18,6 +18,7 @@
     "fixtures:generate": "pnpm build && node tests/fixtures/generate-scenario-bundles.mjs && biome format --write fixtures/happy-path fixtures/amount-mismatch fixtures/rpc-failure fixtures/receipt-warning",
     "test:fixtures": "pnpm build && vitest run tests/fixtures",
     "test:integration": "pnpm build && vitest run tests/integration",
+    "test:live": "pnpm --filter @moss-mini-demo/moss-adapter test:live",
     "test:package-import": "pnpm --filter @moss-mini-demo/report-schema build && pnpm --filter @moss-mini-demo/clear402-profile build && pnpm --filter @moss-mini-demo/decision-engine build && pnpm --filter @moss-mini-demo/moss-adapter build && pnpm --filter @moss-mini-demo/preflight-core build && node packages/report-schema/test/public-entry.smoke.mjs && node packages/clear402-profile/test/public-entry.smoke.mjs && node packages/decision-engine/test/public-entry.smoke.mjs && node --conditions=react-server packages/moss-adapter/test/public-entry.smoke.mjs && node packages/preflight-core/test/public-entry.smoke.mjs",
     "test:coverage": "pnpm --filter @moss-mini-demo/clear402-profile test:coverage && pnpm --filter @moss-mini-demo/preflight-core test:coverage",
     "test:e2e": "playwright test",

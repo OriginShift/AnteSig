@@ -17,7 +17,7 @@ pnpm install --frozen-lockfile
 Run the smoke with an HTTP(S) Monad mainnet endpoint:
 
 ```bash
-MOSS_RPC_URL=https://rpc.monad.xyz pnpm --filter @moss-mini-demo/moss-adapter test:live
+MOSS_RPC_URL=https://rpc.monad.xyz pnpm test:live
 ```
 
 `MOSS_RPC_URL` is server-only secret material even when the public endpoint is used. Do not paste the raw URL, request headers, provider logs, or raw RPC request/response bodies into Issues or PRs. URLs containing username/password credentials are rejected.
